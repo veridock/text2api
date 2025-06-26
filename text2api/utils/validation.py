@@ -1,0 +1,5 @@
+# Walidacja
+"""
+validation.py
+"""
+

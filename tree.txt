@@ -1,0 +1,71 @@
+text2api/
+├── pyproject.toml
+├── README.md
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
+├── text2api/
+│   ├── __init__.py
+│   ├── cli.py                      # CLI interface
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── analyzer.py             # Analiza tekstu z NLP
+│   │   ├── generator.py            # Generator API
+│   │   ├── protocols.py            # Definicje protokołów
+│   │   └── mcp_integration.py      # Integracja z MCP
+│   ├── llm/
+│   │   ├── __init__.py
+│   │   ├── ollama_client.py        # Klient Ollama
+│   │   ├── prompts.py              # Prompty dla LLM
+│   │   └── language_detector.py    # Detekcja języka
+│   ├── generators/
+│   │   ├── __init__.py
+│   │   ├── fastapi_gen.py          # Generator FastAPI
+│   │   ├── flask_gen.py            # Generator Flask
+│   │   ├── graphql_gen.py          # Generator GraphQL
+│   │   ├── grpc_gen.py             # Generator gRPC
+│   │   ├── websocket_gen.py        # Generator WebSocket
+│   │   └── cli_gen.py              # Generator CLI
+│   ├── templates/
+│   │   ├── fastapi/
+│   │   │   ├── main.py.j2
+│   │   │   ├── models.py.j2
+│   │   │   ├── routes.py.j2
+│   │   │   └── dockerfile.j2
+│   │   ├── flask/
+│   │   │   ├── app.py.j2
+│   │   │   ├── models.py.j2
+│   │   │   └── dockerfile.j2
+│   │   ├── graphql/
+│   │   │   ├── schema.py.j2
+│   │   │   ├── resolvers.py.j2
+│   │   │   └── dockerfile.j2
+│   │   ├── grpc/
+│   │   │   ├── service.proto.j2
+│   │   │   ├── server.py.j2
+│   │   │   └── dockerfile.j2
+│   │   ├── websocket/
+│   │   │   ├── server.py.j2
+│   │   │   └── dockerfile.j2
+│   │   └── cli/
+│   │       ├── cli.py.j2
+│   │       └── dockerfile.j2
+│   ├── examples/
+│   │   ├── __init__.py
+│   │   └── sample_descriptions.py  # Przykładowe opisy
+│   └── utils/
+│       ├── __init__.py
+│       ├── file_utils.py           # Utilities do plików
+│       ├── docker_utils.py         # Utilities do Docker
+│       └── validation.py           # Walidacja
+├── tests/
+│   ├── __init__.py
+│   ├── test_analyzer.py
+│   ├── test_generator.py
+│   ├── test_ollama_client.py
+│   └── fixtures/
+│       └── sample_texts.py
+└── docs/
+    ├── api.md
+    ├── examples.md
+    └── protocols.md

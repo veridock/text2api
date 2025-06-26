@@ -1,0 +1,5 @@
+# Definicje protokołów
+"""
+protocols.py
+"""
+
