@@ -46,7 +46,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 # CORS
-CORS(app)
+CORS(app)'''
 
 {% if api_spec.database_required %}
 # Database configuration

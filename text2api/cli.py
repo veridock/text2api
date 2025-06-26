@@ -540,3 +540,5 @@ def check():
                     console.print(table)
 
             except Exception as e:
+                console.print(f"[red]Błąd podczas sprawdzania modeli: {e}")
+                console.print("[yellow]Upewnij się, że serwer Ollama jest uruchomiony i dostępny pod podanym adresem.")
