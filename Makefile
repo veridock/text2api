@@ -42,6 +42,18 @@ endef
 all: install create process aggregate search
 	$(call log_success,Document processing pipeline completed successfully!)
 
+# Publish target using Poetry
+.PHONY: publish
+publish:
+	$(call log_info,Installing and running the project with Poetry...)
+	poetry install
+	poetry run text2api generate "API do zarządzania użytkownikami z CRUD operations"
+	poetry run text2api generate "System czatu" --type websocket --framework websockets
+	poetry run text2api generate "Blog API" --no-docker --no-tests
+	poetry run text2api generate-from-file --interactive
+	poetry run text2api check
+	$(call log_success,Project published and commands executed successfully!)
+
 # Push changes to remote repository
 .PHONY: push
 push:
@@ -62,12 +74,16 @@ push:
 publish: clean
 	$(call log_info,Preparing to publish package...)
 	@if [ -f "setup.py" ]; then \
-		. $(ACTIVATE) && \
-		$(PYTHON) -m pip install --upgrade build twine && \
-		rm -rf dist/ build/ && \
-		$(PYTHON) -m build && \
-		twine upload dist/* || \
-		{ $(call log_error,Failed to publish package); exit 1; }; \
+		set -e; \
+		. $(ACTIVATE); \
+		echo "Installing/updating build tools..."; \
+		$(PYTHON) -m pip install --upgrade build twine >/dev/null 2>&1; \
+		echo "Cleaning previous builds..."; \
+		rm -rf dist/ build/; \
+		echo "Building package..."; \
+		$(PYTHON) -m build || { $(call log_error,Build failed); exit 1; }; \
+		echo "Uploading to PyPI..."; \
+		twine upload dist/* || { $(call log_error,Upload failed); exit 1; }; \
 	else \
 		$(call log_error,setup.py not found. Not a Python package?); \
 		exit 1; \
