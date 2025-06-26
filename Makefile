@@ -42,27 +42,37 @@ endef
 all: install create process aggregate search
 	$(call log_success,Document processing pipeline completed successfully!)
 
-# Publish target using Poetry
-.PHONY: publish
-publish:
-	$(call log_info,Installing and running the project with Poetry...)
-	poetry install
+# Run commands using Poetry
+.PHONY: run-commands
+run-commands:
+	$(call log_info,Running text2api commands with Poetry...)
 	poetry run text2api generate "API do zarządzania użytkownikami z CRUD operations"
 	poetry run text2api generate "System czatu" --type websocket --framework websockets
 	poetry run text2api generate "Blog API" --no-docker --no-tests
 	poetry run text2api generate-from-file --interactive
 	poetry run text2api check
-	$(call log_success,Project published and commands executed successfully!)
+	$(call log_success,Commands executed successfully!)
 
 # Push changes to remote repository
 .PHONY: push
 push:
-	$(call log_info,Pushing changes to remote repository...)
+	$(call log_info,Staging all changes...)
 	@if [ -d .git ]; then \
 		git add . && \
-		git commit -m "Update: $(shell date +'%Y-%m-%d %H:%M:%S')" && \
-		git push origin $(shell git rev-parse --abbrev-ref HEAD) || \
-		{ $(call log_error,Failed to push changes); exit 1; }; \
+		git diff --cached --quiet && \
+		{ echo "No changes to commit"; exit 0; } || \
+		{ \
+			echo "Committing changes..." && \
+			git commit -m "Update: $(shell date +'%Y-%m-%d %H:%M:%S')" && \
+			echo "Pushing to remote..." && \
+			git push origin $(shell git rev-parse --abbrev-ref HEAD) 2>/dev/null; \
+			if [ $$? -ne 0 ]; then \
+				echo "Failed to push to remote. This might be due to authentication issues."; \
+				echo "Please ensure you have the correct permissions to push to the repository."; \
+				echo "You may need to set up SSH keys or use a personal access token."; \
+				exit 1; \
+			fi; \
+		} \
 	else \
 		$(call log_error,Not a git repository); \
 		exit 1; \
