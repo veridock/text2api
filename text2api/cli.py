@@ -350,7 +350,7 @@ def models(url):
 
 
 def main():
-    """Entry point dla CLI"""
+    """Main entry point for the CLI."""
     try:
         return cli()
     except KeyboardInterrupt:
@@ -539,4 +539,4 @@ def check():
                     table.add_row("Modele", "❌ Brak", "Pobierz model: ollama pull llama3.1:8b")
                     console.print(table)
 
-            except Exception as e
+            except Exception as e:

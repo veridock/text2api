@@ -207,18 +207,36 @@ text2api generate-from-file --file api_description.txt
 
 ```
 text2api/
-├── text2api/           # Kod źródłowy
-│   ├── core/           # Główna logika
-│   ├── generators/     # Generatory kodu
-│   ├── llm/            # Integracja z modelami językowymi
-│   ├── templates/      # Szablony kodu
-│   └── utils/          # Narzędzia pomocnicze
-├── tests/              # Testy jednostkowe i integracyjne
-├── docs/               # Dokumentacja
-├── pyproject.toml      # Konfiguracja Poetry
-├── Makefile            # Automatyzacja zadań
-├── docker-compose.yml  # Konfiguracja Docker
-└── README.md          # Ten plik
+├── text2api/         # Pakiet Pythona
+│   ├── core/         # Analiza tekstu i specyfikacje API
+│   │   ├── analyzer.py
+│   │   ├── api_spec.py
+│   │   └── __init__.py
+│   ├── generators/   # Generatory kodu dla różnych framework'ów
+│   │   ├── flask_gen.py
+│   │   ├── fastapi_gen.py
+│   │   ├── graphql_gen.py
+│   │   ├── grpc_gen.py
+│   │   ├── websocket_gen.py
+│   │   ├── cli_gen.py
+│   │   └── __init__.py
+│   ├── llm/         # Integracja z Ollama
+│   │   ├── client.py
+│   │   ├── model.py
+│   │   ├── prompts.py
+│   │   └── __init__.py
+│   ├── utils/        # Narzędzia pomocnicze
+│   │   ├── docker_utils.py
+│   │   ├── file_utils.py
+│   │   ├── validation.py
+│   │   └── __init__.py
+│   └── examples/     # Przykłady API
+│       └── __init__.py
+├── tests/            # Testy jednostkowe i integracyjne
+│   ├── test_core.py
+│   ├── test_generators.py
+│   └── conftest.py
+└── docs/             # Dokumentacja
 ```
 
 ### Struktura wygenerowanego projektu
