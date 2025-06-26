@@ -98,15 +98,12 @@ publish: clean
 .PHONY: install
 install: install-system-deps
 	$(call log_info,Installing dependencies with Poetry...)
-	poetry install
+	poetry install --with dev
 	$(call log_success,Dependencies installed successfully!)
 
-# Install development dependencies
+# Install development dependencies (alias for install)
 .PHONY: install-dev
 install-dev: install
-	$(call log_info,Installing development dependencies with Poetry...)
-	poetry install --with dev
-	$(call log_success,Development dependencies installed successfully!)
 
 # Install system dependencies
 .PHONY: install-system-deps
@@ -176,25 +173,96 @@ img-convert:
 pdf-convert:
 	$(call convert_file,pandoc,$(FROM),$(TO),$(INPUT),$(OUTPUT))
 
-# Code formatting
-.PHONY: format
-format:
-	$(call log_info,Formatting code...)
-	. $(ACTIVATE) && black processor.py
-	. $(ACTIVATE) && isort processor.py
-	$(call log_success,Code formatting completed!)
+# Development Commands
+.PHONY: help install test test-unit test-integration test-functional test-performance test-slow test-ollama test-docker test-coverage lint format format-check clean
 
-# Code linting
-.PHONY: lint
-lint:
-	$(call log_info,Linting code...)
-	. $(ACTIVATE) && flake8 processor.py --max-line-length=88 --extend-ignore=E203,W503
-	. $(ACTIVATE) && mypy processor.py --ignore-missing-imports
-	$(call log_success,Linting completed!)
+help:  ## Show this help
+	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-# Run tests
+# Installation
+install:  ## Install dependencies
+	poetry install --with dev
+
+# Testing
 .PHONY: test
-test: install
+test:  ## Run all tests
+	poetry run pytest
+
+.PHONY: test-unit
+test-unit:  ## Run unit tests only
+	poetry run pytest tests/unit -v
+
+.PHONY: test-integration
+test-integration:  ## Run integration tests only
+	poetry run pytest tests/integration -v
+
+.PHONY: test-functional
+test-functional:  ## Run functional tests only
+	poetry run pytest tests/functional -v
+
+.PHONY: test-performance
+test-performance:  ## Run performance tests only
+	poetry run pytest -m performance -v
+
+.PHONY: test-slow
+test-slow:  ## Run slow tests
+	poetry run pytest -m slow -v
+
+.PHONY: test-ollama
+test-ollama:  ## Run tests requiring Ollama
+	poetry run pytest -m requires_ollama -v
+
+.PHONY: test-docker
+test-docker:  ## Run tests requiring Docker
+	poetry run pytest -m requires_docker -v
+
+.PHONY: test-coverage
+test-coverage:  ## Run tests with coverage
+	poetry run pytest --cov=text2api --cov-report=html --cov-report=term
+
+# Code Quality
+.PHONY: lint
+lint:  ## Run linting
+	poetry run flake8 text2api tests
+	poetry run mypy text2api
+
+.PHONY: format
+format:  ## Format code
+	poetry run black text2api tests
+	poetry run isort text2api tests
+
+.PHONY: format-check
+format-check:  ## Check code formatting
+	poetry run black --check text2api tests
+	poetry run isort --check-only text2api tests
+
+# Cleanup
+.PHONY: clean
+clean:  ## Clean up temporary files
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	find . -type f -name "*~" -delete
+	rm -rf build/
+	rm -rf dist/
+	rm -rf *.egg-info/
+	rm -rf .pytest_cache/
+	rm -rf .coverage
+	rm -rf html
+
+# Documentation
+.PHONY: docs
+docs:  ## Generate documentation
+	poetry run mkdocs build
+
+# Docker
+.PHONY: docker
+docker:  ## Build and run with Docker
+	docker-compose up --build
+
+# Preserve existing test command
+.PHONY: test-original
+test-original: install
 	$(call log_info,Running tests...)
 	. $(ACTIVATE) && python test_environment.py
 	@if [ -f "tests/test_processor.py" ]; then \
@@ -310,22 +378,28 @@ monitor:
 
 # Generate documentation
 .PHONY: docs
-docs:
+docs:  ## Generate documentation
 	$(call log_info,Generating documentation...)
 	@mkdir -p docs
-	@echo "# Document Processing Pipeline Documentation" > docs/README.md
-	@echo "" >> docs/README.md
-	@echo "Generated on: $(date)" >> docs/README.md
-	@echo "" >> docs/README.md
-	@$(MAKE) help >> docs/README.md
-	$(call log_success,Documentation generated in docs/)
+	poetry run mkdocs build
+	$(call log_success,Documentation generated in site/)
 
 # Clean generated files
 .PHONY: clean
-clean:
+clean:  ## Clean up temporary files
 	$(call log_info,Cleaning generated files...)
-	@rm -f *.pdf *.svg *.png *.json *.html
-	@rm -rf $(OUTPUT_DIR)/ __pycache__/ *.pyc .pytest_cache/ .coverage
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	find . -type f -name "*~" -delete
+	rm -rf build/
+	rm -rf dist/
+	rm -rf *.egg-info/
+	rm -rf .pytest_cache/
+	rm -rf .coverage
+	rm -rf html
+	rm -f *.pdf *.svg *.png *.json *.html
+	rm -rf $(OUTPUT_DIR)/ __pycache__/ *.pyc .pytest_cache/ .coverage
 	$(call log_success,Cleanup completed!)
 
 # Clean everything including virtual environment
@@ -387,8 +461,8 @@ interactive:
 
 # Help target with enhanced information
 .PHONY: help
-help:
-	@echo -e "$(BLUE)Document Processing Pipeline$(NC)"
+help:  ## Show this help
+	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 	@echo "================================="
 	@echo ""
 	@echo -e "$(CYAN)Core Pipeline:$(NC)"

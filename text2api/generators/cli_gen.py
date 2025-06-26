@@ -298,7 +298,7 @@ def list_{{ model.name|lower }}s(cli, format, output):
               default='table', help='Output format')
 @click.pass_obj
 def get_{{ model.name|lower }}(cli, id, format):
-    # Get {{ model.name }} by ID
+    """Get {{ model.name }} by ID"""
     try:
         # Add code to fetch {{ model.name }} by ID here
         item = None  # Replace with actual data

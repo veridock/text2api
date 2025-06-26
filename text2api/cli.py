@@ -55,34 +55,35 @@ def generate(description, output, type, framework, no_docker, no_tests, no_docs,
     """
 
     async def _generate():
-        generator = APIGenerator(ollama_url=ollama_url, output_dir=output_dir)
+        generator = APIGenerator(output_dir=output_dir, ollama_url=ollama_url)
 
         with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
                 console=console,
         ) as progress:
-
             task = progress.add_task("🔍 Analizuję opis...", total=None)
 
             try:
-                result = await generator.generate_from_text(
-                    text=description,
-                    output_name=output,
-                    include_docker=not no_docker,
-                    include_tests=not no_tests,
-                    include_docs=not no_docs
+                # Use the correct generate method with the API type if specified
+                api_type = type if type else "rest"
+                result = await generator.generate(
+                    description=description,
+                    api_type=api_type,
+                    framework=framework if framework else "fastapi"
                 )
 
                 progress.remove_task(task)
 
-                if result['success']:
+
+                if result.get('status') == 'success':
+                    project_path = result.get('project_dir', 'unknown')
                     console.print(Panel.fit(
                         f"✅ API wygenerowane pomyślnie!\n\n"
-                        f"📁 Lokalizacja: {result['project_path']}\n"
-                        f"🔧 Typ API: {result['api_spec']['api_type']}\n"
-                        f"⚡ Framework: {result['api_spec']['framework']}\n"
-                        f"📄 Pliki: {len(result['generated_files'])} + {len(result['additional_files'])}",
+                        f"📁 Lokalizacja: {project_path}\n"
+                        f"🔧 Typ API: {result.get('api_type', 'unknown')}\n"
+                        f"⚡ Framework: {result.get('framework', 'unknown')}\n"
+                        f"📄 Pliki: {', '.join(result.get('files_generated', []))}",
                         title="Sukces",
                         border_style="green"
                     ))
@@ -109,7 +110,7 @@ def generate(description, output, type, framework, no_docker, no_tests, no_docs,
 
         # Sprawdź status Ollama
         try:
-            client = OllamaClient(url=ollama_url)
+            client = OllamaClient(base_url=ollama_url)
             models = await client.list_models()
             
             if models:
@@ -307,7 +308,7 @@ def models(url):
     """
 
     async def _models():
-        ollama_client = OllamaClient(url)
+        ollama_client = OllamaClient(base_url=url)
 
         try:
             models = await ollama_client.list_models()
@@ -499,7 +500,7 @@ def check():
         console.print("🔍 Sprawdzam dostępność narzędzi...\n")
 
         # Sprawdź Ollama
-        ollama_client = OllamaClient(url)
+        ollama_client = OllamaClient(base_url=url)
 
         with Progress(SpinnerColumn(), TextColumn("{task.description}")) as progress:
             task = progress.add_task("Sprawdzam Ollama...", total=None)

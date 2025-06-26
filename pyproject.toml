@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "text2api"
-version = "0.1.1"
+version = "0.1.2"
 description = "Automatyczne generowanie API na podstawie opisu tekstowego z wykorzystaniem NLP i Ollama"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
