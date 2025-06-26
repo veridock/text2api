@@ -17,41 +17,57 @@ text2api to zaawansowane narzędzie, które automatycznie generuje kompletne API
 
 ## 🚀 Szybki start
 
-### Instalacja z Poetry
+### Wymagania wstępne
+
+- Python 3.9+
+- [Poetry](https://python-poetry.org/) (zalecane do zarządzania zależnościami)
+- [Ollama](https://ollama.ai/) (dla analizy NLP)
+- Docker (opcjonalnie, dla konteneryzacji)
+
+### Instalacja z użyciem Makefile
 
 ```bash
 # Klonuj repozytorium
-git clone https://github.com/username/text2api.git
+git clone https://github.com/veridock/text2api.git
 cd text2api
 
-# Zainstaluj z Poetry
-poetry install
+# Zainstaluj zależności (wykonuje również `poetry install`)
+make install
 
-# Aktywuj środowisko
+# Zainstaluj zależności deweloperskie
+make install-dev
+
+# Aktywuj środowisko Poetry
 poetry shell
 ```
 
-### Instalacja z pip
+### Dostępne komendy Makefile
+
+- `make install` - Instaluje główne zależności projektu
+- `make install-dev` - Instaluje zależności deweloperskie
+- `make publish` - Publikuje pakiet do PyPI
+- `make clean` - Czyści wygenerowane pliki
+- `make test` - Uruchamia testy
+- `make format` - Formatuje kod źródłowy
+- `make lint` - Sprawdza jakość kodu
+
+### Uruchomienie z Dockerem
 
 ```bash
-pip install text2api
-```
-
-### Docker (zalecane)
-
-```bash
-# Uruchom kompletne środowisko
+# Zbuduj i uruchom kontenery
 docker-compose up -d
 
 # Użyj text2api
 docker-compose exec text2api text2api generate "API do zarządzania użytkownikami"
 ```
 
-## 📋 Wymagania
+## 📋 Wymagania systemowe
 
 - **Python 3.9+**
-- **Ollama** - dla analizy NLP
+- **Poetry** - do zarządzania zależnościami
+- **Ollama** - dla analizy NLP (zalecany model: `llama3.1:8b`)
 - **Docker** (opcjonalnie) - dla konteneryzacji
+- **Git** - do kontroli wersji
 
 ### Instalacja Ollama
 
@@ -65,6 +81,46 @@ ollama serve
 # Pobierz zalecany model
 ollama pull llama3.1:8b
 ```
+
+## 🛠️ Rozwój projektu
+
+### Konfiguracja środowiska
+
+1. Sklonuj repozytorium:
+   ```bash
+   git clone https://github.com/veridock/text2api.git
+   cd text2api
+   ```
+
+2. Zainstaluj zależności:
+   ```bash
+   make install
+   make install-dev
+   ```
+
+3. Skonfiguruj Ollama:
+   ```bash
+   # Uruchom serwer Ollama
+   ollama serve
+   
+   # Pobierz zalecany model
+   ollama pull llama3.1:8b
+   ```
+
+### Publikacja nowej wersji
+
+1. Zaktualizuj wersję w `pyproject.toml`
+2. Zatwierdź zmiany i utwórz tag:
+   ```bash
+   git add .
+   git commit -m "Bump version to X.Y.Z"
+   git tag -a vX.Y.Z -m "Version X.Y.Z"
+   git push --tags
+   ```
+3. Opublikuj nową wersję:
+   ```bash
+   make publish
+   ```
 
 ## 💡 Przykłady użycia
 
@@ -147,17 +203,34 @@ text2api generate-from-file --file api_description.txt
 - Kolorowe output (Rich)
 - Pluggable commands
 
-## 📁 Struktura wygenerowanego projektu
+## 📁 Struktura projektu
 
 ```
-my_api/
+text2api/
+├── text2api/           # Kod źródłowy
+│   ├── core/           # Główna logika
+│   ├── generators/     # Generatory kodu
+│   ├── llm/            # Integracja z modelami językowymi
+│   ├── templates/      # Szablony kodu
+│   └── utils/          # Narzędzia pomocnicze
+├── tests/              # Testy jednostkowe i integracyjne
+├── docs/               # Dokumentacja
+├── pyproject.toml      # Konfiguracja Poetry
+├── Makefile            # Automatyzacja zadań
+├── docker-compose.yml  # Konfiguracja Docker
+└── README.md          # Ten plik
+```
+
+### Struktura wygenerowanego projektu
+
+```
+generated_api/
 ├── main.py              # Główny plik aplikacji
 ├── models.py            # Modele danych
 ├── requirements.txt     # Zależności Python
-├── Dockerfile          # Konteneryzacja
-├── docker-compose.yml  # Kompletne środowisko
-├── .env.example        # Zmienne środowiskowe
-├── api_spec.json       # Specyfikacja API
+├── Dockerfile          # Konfiguracja kontenera
+├── docker-compose.yml  # Środowisko deweloperskie
+├── .env.example        # Przykładowe zmienne środowiskowe
 ├── README.md           # Dokumentacja projektu
 ├── tests/              # Testy automatyczne
 │   ├── test_api.py

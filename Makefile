@@ -57,7 +57,7 @@ run-commands:
 .PHONY: push
 push:
 	$(call log_info,Staging all changes...)
-	@if [ -d .git ]; then \
+	if [ -d .git ]; then \
 		git add . && \
 		git diff --cached --quiet && \
 		{ echo "No changes to commit"; exit 0; } || \
@@ -79,39 +79,34 @@ push:
 	fi
 	$(call log_success,Changes pushed successfully!)
 
-# Publish package to PyPI
+# Publish package to PyPI using Poetry
 .PHONY: publish
 publish: clean
 	$(call log_info,Preparing to publish package...)
-	@if [ -f "setup.py" ]; then \
-		set -e; \
-		. $(ACTIVATE); \
-		echo "Installing/updating build tools..."; \
-		$(PYTHON) -m pip install --upgrade build twine >/dev/null 2>&1; \
-		echo "Cleaning previous builds..."; \
-		rm -rf dist/ build/; \
+	@if [ -f "pyproject.toml" ]; then \
 		echo "Building package..."; \
-		$(PYTHON) -m build || { $(call log_error,Build failed); exit 1; }; \
-		echo "Uploading to PyPI..."; \
-		twine upload dist/* || { $(call log_error,Upload failed); exit 1; }; \
+		poetry version patch && poetry build || { echo "Build failed"; exit 1; }; \
+		echo "Publishing to PyPI..."; \
+		poetry publish || { echo "Publish failed"; exit 1; }; \
 	else \
-		$(call log_error,setup.py not found. Not a Python package?); \
+		echo "pyproject.toml not found. Not a Poetry project?"; \
 		exit 1; \
 	fi
 	$(call log_success,Package published successfully!)
 
 # Install all required dependencies
 .PHONY: install
-install: $(VENV)/bin/activate install-system-deps
-	$(call log_info,Installing Python dependencies...)
-	. $(ACTIVATE) && $(PIP) install --upgrade pip setuptools wheel
-	. $(ACTIVATE) && $(PIP) install -r requirements.txt
+install: install-system-deps
+	$(call log_info,Installing dependencies with Poetry...)
+	poetry install
 	$(call log_success,Dependencies installed successfully!)
 
-# Create virtual environment
-$(VENV)/bin/activate:
-	$(call log_info,Creating virtual environment...)
-	$(PYTHON) -m venv $(VENV)
+# Install development dependencies
+.PHONY: install-dev
+install-dev: install
+	$(call log_info,Installing development dependencies with Poetry...)
+	poetry install --with dev
+	$(call log_success,Development dependencies installed successfully!)
 
 # Install system dependencies
 .PHONY: install-system-deps
@@ -122,19 +117,6 @@ install-system-deps:
 	else \
 		echo -e "$(YELLOW)[WARN]$(NC) System dependency installer not found"; \
 	fi
-
-# Development environment setup
-.PHONY: install-dev
-install-dev: install
-	$(call log_info,Installing development dependencies...)
-	. $(ACTIVATE) && $(PIP) install \
-		black>=22.3.0 \
-		isort>=5.10.1 \
-		flake8>=5.0.0 \
-		mypy>=0.971 \
-		pytest>=7.0.0 \
-		pytest-cov>=3.0.0
-	$(call log_success,Development environment ready!)
 
 # Create example files
 .PHONY: create

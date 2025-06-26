@@ -101,21 +101,30 @@ def generate(description, output, type, framework, no_docker, no_tests, no_docs,
                     ))
 
             except Exception as e:
-                table.add_row("Modele", "❌ Błąd", f"Błąd: {str(e)}")
-                console.print(table)
+                console.print(Panel.fit(
+                    f"❌ Błąd wykonania:\n{str(e)}",
+                    title="Błąd",
+                    border_style="red"
+                ))
 
-        else:
-        table.add_row("Ollama", "❌ Niedostępna", f"Sprawdź czy działa na {url}")
-        table.add_row("Modele", "❌ Niedostępne", "Ollama nie działa")
-        console.print(table)
+        # Sprawdź status Ollama
+        try:
+            client = OllamaClient(url=ollama_url)
+            models = await client.list_models()
+            
+            if models:
+                console.print("\n✅ Ollama działa poprawnie!")
+                console.print(f"   Modele: {', '.join(models)}")
+            else:
+                console.print("\n⚠️ Ollama działa, ale nie ma modeli!")
+                console.print("   Uruchom: ollama pull llama3.1:8b")
+        except Exception as e:
+            console.print("\n❌ Ollama nie działa!")
+            console.print(f"   Błąd: {str(e)}")
+            console.print("   Sprawdź czy serwer działa na {ollama_url}")
+            console.print("   Uruchom: ollama serve")
 
-        console.print("\n💡 Aby uruchomić Ollama:")
-        console.print("   1. Zainstaluj: https://ollama.ai")
-        console.print("   2. Uruchom: ollama serve")
-        console.print("   3. Pobierz model: ollama pull llama3.1:8b")
-
-
-asyncio.run(_check())
+    asyncio.run(_generate())
 
 
 @cli.command()
@@ -333,8 +342,9 @@ def models(url):
                 console.print("   ollama pull <model_name>")
 
         except Exception as e:
-            console.print(f"❌ Błąd pobierania listy modeli: {e}")
-            console.print("💡 Sprawdź czy Ollama działa na", url)
+            console.print(f"[red]Błąd podczas sprawdzania modeli: {e}")
+            console.print("[yellow]Upewnij się, że serwer Ollama jest uruchomiony i dostępny pod podanym adresem.")
+            return
 
     asyncio.run(_models())
 
@@ -342,23 +352,22 @@ def models(url):
 def main():
     """Entry point dla CLI"""
     try:
-        cli()
+        return cli()
     except KeyboardInterrupt:
         console.print("\n👋 Przerwano przez użytkownika")
+        return 1
     except Exception as e:
-        console.print(f"\n💥 Nieoczekiwany błąd: {e}")
+        console.print(Panel.fit(
+            f"💥 Nieoczekiwany błąd:\n{str(e)}",
+            title="Krytyczny błąd",
+            border_style="red"
+        ))
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main():
-    progress.remove_task(task)
-    console.print(Panel.fit(
-        f"💥 Nieoczekiwany błąd:\n{str(e)}",
-        title="Krytyczny błąd",
-        border_style="red"
-    ))
-
-asyncio.run(_generate())
+    main()
 
 
 @cli.command()
