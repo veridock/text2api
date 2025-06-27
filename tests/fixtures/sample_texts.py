@@ -1,4 +1,3 @@
 """
 sample_texts.py
 """
-

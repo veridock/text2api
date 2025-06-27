@@ -302,50 +302,50 @@ Connect to the WebSocket server at `ws://localhost:8765`.
 """
 
         return {
-            'server.py': server_template,
-            'requirements.txt': requirements_txt,
-            'README.md': readme_md
+            "server.py": server_template,
+            "requirements.txt": requirements_txt,
+            "README.md": readme_md,
         }
 
     async def generate(self, api_spec: ApiSpec, output_path: Path) -> Dict[str, str]:
         """
         Generuje kod WebSocket na podstawie specyfikacji API
-        
+
         Args:
             api_spec: Specyfikacja API
             output_path: Ścieżka do katalogu wyjściowego
-            
+
         Returns:
             Słownik zawierający wygenerowane pliki
         """
         generated_files = {}
         env = Environment()
-        
+
         # Create output directory
         output_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Generate server.py
-        server_template = env.from_string(self.templates['server.py'])
+        server_template = env.from_string(self.templates["server.py"])
         server_content = server_template.render(api_spec=api_spec)
-        
-        server_file = output_path / 'server.py'
+
+        server_file = output_path / "server.py"
         await self.file_manager.write_file(server_file, server_content)
-        generated_files['server.py'] = str(server_file)
-        
+        generated_files["server.py"] = str(server_file)
+
         # Generate requirements.txt
-        requirements_template = env.from_string(self.templates['requirements.txt'])
+        requirements_template = env.from_string(self.templates["requirements.txt"])
         requirements_content = requirements_template.render(api_spec=api_spec)
-        
-        requirements_file = output_path / 'requirements.txt'
+
+        requirements_file = output_path / "requirements.txt"
         await self.file_manager.write_file(requirements_file, requirements_content)
-        generated_files['requirements.txt'] = str(requirements_file)
-        
+        generated_files["requirements.txt"] = str(requirements_file)
+
         # Generate README.md
-        readme_template = env.from_string(self.templates['README.md'])
+        readme_template = env.from_string(self.templates["README.md"])
         readme_content = readme_template.render(api_spec=api_spec)
-        
-        readme_file = output_path / 'README.md'
+
+        readme_file = output_path / "README.md"
         await self.file_manager.write_file(readme_file, readme_content)
-        generated_files['README.md'] = str(readme_file)
-        
+        generated_files["README.md"] = str(readme_file)
+
         return generated_files

@@ -13,36 +13,32 @@ SAMPLE_DESCRIPTIONS = {
         "System fakturowania z klientami, fakturami i pozycjami",
         "API dla platformy e-learning z kursami, lekcjami i studentami",
         "System zarządzania wydarzeniami z terminarzem i uczestnikami",
-        "API dla aplikacji fitness z treningami, ćwiczeniami i statystykami"
+        "API dla aplikacji fitness z treningami, ćwiczeniami i statystykami",
     ],
-
     "graphql_apis": [
         "GraphQL API dla mediów społecznościowych z postami, komentarzami i relacjami",
         "System zarządzania treścią (CMS) z artykułami, kategoriami i autorami",
         "API dla platformy streamingowej z filmami, serialami i ocenami",
         "System zarządzania projektami z zadaniami, zespołami i milestone'ami",
         "GraphQL dla sklepu z produktami, kategoriami, zamówieniami i recenzjami",
-        "API dla platformy edukacyjnej z kursami, modułami i postępami studentów"
+        "API dla platformy edukacyjnej z kursami, modułami i postępami studentów",
     ],
-
     "grpc_apis": [
         "Mikrousługa do przetwarzania płatności z walidacją i powiadomieniami",
         "Serwis uwierzytelniania z tokenami JWT i odświeżaniem sesji",
         "API do konwersji walut z aktualnymi kursami i historią",
         "Mikrousługa do wysyłki emaili z szablonami i kolejką",
         "Serwis geolokalizacji z wyszukiwaniem miejscowości i dystansów",
-        "API do analizy sentimentu tekstu z wynikami i statystykami"
+        "API do analizy sentimentu tekstu z wynikami i statystykami",
     ],
-
     "websocket_apis": [
         "Serwer czatu w czasie rzeczywistym z pokojami i historią wiadomości",
         "System notyfikacji push z subskrypcjami i filtrami",
         "API do gier wieloosobowych z synchronizacją stanu gry",
         "Platforma streamingu danych finansowych z kursami giełdowymi",
         "System monitoringu IoT z czujnikami i alertami w czasie rzeczywistym",
-        "Kolaboracyjny edytor tekstu z synchronizacją zmian między użytkownikami"
+        "Kolaboracyjny edytor tekstu z synchronizacją zmian między użytkownikami",
     ],
-
     "cli_tools": [
         "Narzędzie do konwersji plików między formatami (JSON, XML, CSV, YAML)",
         "CLI do zarządzania bazą danych z migracjami i backupami",
@@ -53,9 +49,8 @@ SAMPLE_DESCRIPTIONS = {
         "Generator projektów z templates i konfiguracją",
         "Narzędzie do testowania API z assertions i raportami",
         "CLI do zarządzania secrets i konfiguracją środowisk",
-        "Backup tool z kompresją, szyfrowaniem i harmonogramem"
+        "Backup tool z kompresją, szyfrowaniem i harmonogramem",
     ],
-
     "complex_examples": [
         """
         Kompletny system e-commerce z następującymi funkcjonalnościami:
@@ -70,7 +65,6 @@ SAMPLE_DESCRIPTIONS = {
         - Panel administracyjny z raportami sprzedaży
         - API dla aplikacji mobilnej
         """,
-
         """
         Platforma do zarządzania projektami z funkcjami:
         - Tworzenie projektów z zespołami i uprawnieniami
@@ -84,7 +78,6 @@ SAMPLE_DESCRIPTIONS = {
         - API dla integracji z zewnętrznymi narzędziami
         - System fakturowania czasu pracy
         """,
-
         """
         System zarządzania uczelnią z modułami:
         - Zarządzanie studentami z danymi osobowymi i akademickimi
@@ -97,9 +90,8 @@ SAMPLE_DESCRIPTIONS = {
         - Portal dla studentów i wykładowców
         - Generowanie dyplomów i zaświadczeń
         - Statystyki i raporty akademickie
-        """
+        """,
     ],
-
     "polish_examples": [
         "API do systemu kolejkowego w urzędzie z numerkami i powiadomieniami",
         "System rezerwacji sal konferencyjnych z kalendarzem i dostępnością",
@@ -110,9 +102,8 @@ SAMPLE_DESCRIPTIONS = {
         "System elektronicznych recept z lekarzami i aptekami",
         "API dla systemu głosowania elektronicznego z kandydatami",
         "Platforma crowdfundingowa z projektami i wpłatami",
-        "System zarządzania odpadami z harmonogramem wywozu"
+        "System zarządzania odpadami z harmonogramem wywozu",
     ],
-
     "international_examples": [
         "Multi-tenant SaaS platform for customer relationship management",
         "Real-time collaboration platform for distributed teams",
@@ -123,8 +114,8 @@ SAMPLE_DESCRIPTIONS = {
         "API for cryptocurrency trading with real-time market data",
         "Logistics and supply chain management platform",
         "Healthcare patient management system with appointments",
-        "Smart city infrastructure monitoring platform"
-    ]
+        "Smart city infrastructure monitoring platform",
+    ],
 }
 
 
@@ -188,7 +179,7 @@ def get_examples_by_api_type(api_type: str) -> list:
         "graphql": "graphql_apis",
         "grpc": "grpc_apis",
         "websocket": "websocket_apis",
-        "cli": "cli_tools"
+        "cli": "cli_tools",
     }
 
     category = type_mapping.get(api_type)
@@ -226,7 +217,7 @@ BEGINNER_EXAMPLES = [
     "API dla książki adresowej z kontaktami",
     "System logowania użytkowników z rejestracją",
     "API do zarządzania notatkami z tagami",
-    "Prosta aplikacja do głosowania z opcjami"
+    "Prosta aplikacja do głosowania z opcjami",
 ]
 
 INTERMEDIATE_EXAMPLES = [
@@ -234,7 +225,7 @@ INTERMEDIATE_EXAMPLES = [
     "E-commerce z produktami, koszykiem i płatnościami",
     "System zarządzania pracownikami z działami",
     "API dla aplikacji pogodowej z prognozami",
-    "Platforma do udostępniania plików z folderami"
+    "Platforma do udostępniania plików z folderami",
 ]
 
 ADVANCED_EXAMPLES = [
@@ -242,7 +233,7 @@ ADVANCED_EXAMPLES = [
     "Real-time gaming API z matchmakingiem i ranking",
     "ML platform z modelami, treningiem i predykcjami",
     "IoT management system z devices i telemetrią",
-    "Multi-tenant SaaS z billing i analytics"
+    "Multi-tenant SaaS z billing i analytics",
 ]
 
 
@@ -260,7 +251,7 @@ def get_examples_by_skill_level(level: str) -> list:
     level_mapping = {
         "beginner": BEGINNER_EXAMPLES,
         "intermediate": INTERMEDIATE_EXAMPLES,
-        "advanced": ADVANCED_EXAMPLES
+        "advanced": ADVANCED_EXAMPLES,
     }
 
     return level_mapping.get(level, BEGINNER_EXAMPLES)

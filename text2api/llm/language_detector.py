@@ -17,45 +17,45 @@ class LanguageDetector:
 
         # Wzorce językowe dla dodatkowej walidacji
         self.language_patterns = {
-            'pl': [
-                r'\b(się|że|dla|które|można|będzie|systemu|użytkowników|zarządzania)\b',
-                r'\b(API|REST|HTTP|JSON|baza|danych|aplikacja|serwis)\b',
-                r'(ów|ach|ami|em|ie|ę|ą|ę)$'  # końcówki polskie
+            "pl": [
+                r"\b(się|że|dla|które|można|będzie|systemu|użytkowników|zarządzania)\b",
+                r"\b(API|REST|HTTP|JSON|baza|danych|aplikacja|serwis)\b",
+                r"(ów|ach|ami|em|ie|ę|ą|ę)$",  # końcówki polskie
             ],
-            'en': [
-                r'\b(the|and|for|with|that|will|can|system|users|management)\b',
-                r'\b(API|REST|HTTP|JSON|database|application|service)\b',
-                r'(ing|tion|ed|er|ly)$'  # końcówki angielskie
+            "en": [
+                r"\b(the|and|for|with|that|will|can|system|users|management)\b",
+                r"\b(API|REST|HTTP|JSON|database|application|service)\b",
+                r"(ing|tion|ed|er|ly)$",  # końcówki angielskie
             ],
-            'de': [
-                r'\b(der|die|das|und|für|mit|dass|wird|kann|System|Benutzer)\b',
-                r'\b(API|REST|HTTP|JSON|Datenbank|Anwendung|Service)\b',
-                r'(ung|tion|ert|end|lich)$'  # końcówki niemieckie
+            "de": [
+                r"\b(der|die|das|und|für|mit|dass|wird|kann|System|Benutzer)\b",
+                r"\b(API|REST|HTTP|JSON|Datenbank|Anwendung|Service)\b",
+                r"(ung|tion|ert|end|lich)$",  # końcówki niemieckie
             ],
-            'fr': [
-                r'\b(le|la|les|et|pour|avec|que|sera|peut|système|utilisateurs)\b',
-                r'\b(API|REST|HTTP|JSON|base|données|application|service)\b',
-                r'(tion|ment|eur|ant|ique)$'  # końcówki francuskie
+            "fr": [
+                r"\b(le|la|les|et|pour|avec|que|sera|peut|système|utilisateurs)\b",
+                r"\b(API|REST|HTTP|JSON|base|données|application|service)\b",
+                r"(tion|ment|eur|ant|ique)$",  # końcówki francuskie
             ],
-            'es': [
-                r'\b(el|la|los|y|para|con|que|será|puede|sistema|usuarios)\b',
-                r'\b(API|REST|HTTP|JSON|base|datos|aplicación|servicio)\b',
-                r'(ción|miento|dor|ante|ico)$'  # końcówki hiszpańskie
-            ]
+            "es": [
+                r"\b(el|la|los|y|para|con|que|será|puede|sistema|usuarios)\b",
+                r"\b(API|REST|HTTP|JSON|base|datos|aplicación|servicio)\b",
+                r"(ción|miento|dor|ante|ico)$",  # końcówki hiszpańskie
+            ],
         }
 
         # Mapowanie nazw języków
         self.language_names = {
-            'pl': 'Polski',
-            'en': 'English',
-            'de': 'Deutsch',
-            'fr': 'Français',
-            'es': 'Español',
-            'it': 'Italiano',
-            'pt': 'Português',
-            'ru': 'Русский',
-            'cs': 'Čeština',
-            'sk': 'Slovenčina'
+            "pl": "Polski",
+            "en": "English",
+            "de": "Deutsch",
+            "fr": "Français",
+            "es": "Español",
+            "it": "Italiano",
+            "pt": "Português",
+            "ru": "Русский",
+            "cs": "Čeština",
+            "sk": "Slovenčina",
         }
 
     def detect_language(self, text: str) -> str:
@@ -73,7 +73,7 @@ class LanguageDetector:
         cleaned_text = self._clean_text(text)
 
         if len(cleaned_text) < 10:
-            return 'en'  # domyślnie angielski dla krótkich tekstów
+            return "en"  # domyślnie angielski dla krótkich tekstów
 
         try:
             # Główna detekcja używając langdetect
@@ -92,22 +92,22 @@ class LanguageDetector:
 
         except LangDetectException:
             # Fallback do wykrywania wzorcami
-            return self._detect_with_patterns(cleaned_text) or 'en'
+            return self._detect_with_patterns(cleaned_text) or "en"
 
     def _clean_text(self, text: str) -> str:
         """Oczyszcza tekst przed detekcją"""
 
         # Usuń zbędne whitespace
-        text = re.sub(r'\s+', ' ', text.strip())
+        text = re.sub(r"\s+", " ", text.strip())
 
         # Usuń URLs
-        text = re.sub(r'http[s]?://\S+', '', text)
+        text = re.sub(r"http[s]?://\S+", "", text)
 
         # Usuń email
-        text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '', text)
+        text = re.sub(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "", text)
 
         # Usuń nadmiar znaków specjalnych (ale zostaw polskie znaki)
-        text = re.sub(r'[^\w\sąćęłńóśźżĄĆĘŁŃÓŚŹŻ.,!?;:()\-]', '', text)
+        text = re.sub(r"[^\w\sąćęłńóśźżĄĆĘŁŃÓŚŹŻ.,!?;:()\-]", "", text)
 
         return text
 
@@ -161,7 +161,9 @@ class LanguageDetector:
         pattern_score = self._validate_with_patterns(text, detected_lang)
 
         # Dodatkowe czynniki
-        text_length_factor = min(len(text) / 100, 1.0)  # dłuższe teksty = większa pewność
+        text_length_factor = min(
+            len(text) / 100, 1.0
+        )  # dłuższe teksty = większa pewność
 
         # Sprawdź czy tekst zawiera mieszankę języków
         mixed_language_penalty = self._check_mixed_languages(text)
@@ -174,7 +176,7 @@ class LanguageDetector:
         """Sprawdza czy tekst zawiera mieszankę języków"""
 
         # Podziel tekst na fragmenty
-        sentences = re.split(r'[.!?]+', text)
+        sentences = re.split(r"[.!?]+", text)
 
         if len(sentences) < 2:
             return 0.0
@@ -205,12 +207,14 @@ class LanguageDetector:
         confidence = self.get_confidence(text, detected_lang)
 
         return {
-            'language': detected_lang,
-            'language_name': self.language_names.get(detected_lang, detected_lang.upper()),
-            'confidence': confidence,
-            'text_length': len(text),
-            'word_count': len(text.split()),
-            'is_mixed': self._check_mixed_languages(text) > 0.3
+            "language": detected_lang,
+            "language_name": self.language_names.get(
+                detected_lang, detected_lang.upper()
+            ),
+            "confidence": confidence,
+            "text_length": len(text),
+            "word_count": len(text.split()),
+            "is_mixed": self._check_mixed_languages(text) > 0.3,
         }
 
     def suggest_improvements(self, text: str) -> List[str]:
@@ -219,15 +223,23 @@ class LanguageDetector:
         suggestions = []
 
         if len(text) < 50:
-            suggestions.append("Tekst jest bardzo krótki. Dodaj więcej szczegółów dla lepszej analizy.")
+            suggestions.append(
+                "Tekst jest bardzo krótki. Dodaj więcej szczegółów dla lepszej analizy."
+            )
 
         if self._check_mixed_languages(text) > 0.5:
-            suggestions.append("Tekst zawiera mieszankę języków. Użyj jednego języka dla lepszych wyników.")
+            suggestions.append(
+                "Tekst zawiera mieszankę języków. Użyj jednego języka dla lepszych wyników."
+            )
 
         # Sprawdź czy tekst zawiera dużo kodu/technicznych terminów
-        tech_ratio = len(re.findall(r'\b[A-Z_]{2,}\b|\{|\}|\[|\]', text)) / len(text.split())
+        tech_ratio = len(re.findall(r"\b[A-Z_]{2,}\b|\{|\}|\[|\]", text)) / len(
+            text.split()
+        )
         if tech_ratio > 0.3:
-            suggestions.append("Tekst zawiera dużo kodu/terminów technicznych. Dodaj więcej opisowego tekstu.")
+            suggestions.append(
+                "Tekst zawiera dużo kodu/terminów technicznych. Dodaj więcej opisowego tekstu."
+            )
 
         return suggestions
 

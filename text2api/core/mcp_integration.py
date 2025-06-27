@@ -43,7 +43,7 @@ class MCPIntegration:
             "domain_specific_templates",
             "code_generation_optimization",
             "security_pattern_detection",
-            "performance_recommendations"
+            "performance_recommendations",
         ]
 
     async def enhance_spec(self, api_spec: ApiSpec) -> ApiSpec:
@@ -82,12 +82,14 @@ class MCPIntegration:
         enhancements = {
             "entity_relationships": self._detect_entity_relationships(api_spec),
             "business_rules": self._extract_business_rules(api_spec),
-            "data_flow": self._analyze_data_flow(api_spec)
+            "data_flow": self._analyze_data_flow(api_spec),
         }
 
         # Dodaj wykryte związki między encjami
         if enhancements["entity_relationships"]:
-            api_spec = self._add_entity_relationships(api_spec, enhancements["entity_relationships"])
+            api_spec = self._add_entity_relationships(
+                api_spec, enhancements["entity_relationships"]
+            )
 
         return api_spec
 
@@ -98,21 +100,23 @@ class MCPIntegration:
 
         # Analiza nazw endpointów i modeli
         for model in api_spec.models:
-            model_name = model['name'].lower()
+            model_name = model["name"].lower()
             related_entities = []
 
             # Szukaj powiązań w innych modelach
             for other_model in api_spec.models:
-                if other_model['name'] != model['name']:
-                    other_name = other_model['name'].lower()
+                if other_model["name"] != model["name"]:
+                    other_name = other_model["name"].lower()
 
                     # Sprawdź czy nazwy sugerują związek
-                    if any(field['name'].endswith('_id') and other_name in field['name']
-                           for field in model.get('fields', [])):
-                        related_entities.append(other_model['name'])
+                    if any(
+                        field["name"].endswith("_id") and other_name in field["name"]
+                        for field in model.get("fields", [])
+                    ):
+                        related_entities.append(other_model["name"])
 
             if related_entities:
-                relationships[model['name']] = related_entities
+                relationships[model["name"]] = related_entities
 
         return relationships
 
@@ -128,11 +132,12 @@ class MCPIntegration:
             ("authorization", r"permission|role|admin|access"),
             ("validation", r"valid|check|verify|confirm"),
             ("workflow", r"approve|reject|pending|status"),
-            ("audit", r"log|track|history|audit")
+            ("audit", r"log|track|history|audit"),
         ]
 
         for rule_type, pattern in rule_patterns:
             import re
+
             if re.search(pattern, description):
                 rules.append(rule_type)
 
@@ -144,38 +149,40 @@ class MCPIntegration:
         flow = {
             "input_endpoints": [],
             "output_endpoints": [],
-            "processing_endpoints": []
+            "processing_endpoints": [],
         }
 
         for endpoint in api_spec.endpoints:
-            if endpoint.method.value in ['POST', 'PUT', 'PATCH']:
+            if endpoint.method.value in ["POST", "PUT", "PATCH"]:
                 flow["input_endpoints"].append(endpoint.name)
-            elif endpoint.method.value == 'GET':
+            elif endpoint.method.value == "GET":
                 flow["output_endpoints"].append(endpoint.name)
             else:
                 flow["processing_endpoints"].append(endpoint.name)
 
         return flow
 
-    def _add_entity_relationships(self, api_spec: ApiSpec, relationships: Dict[str, List[str]]) -> ApiSpec:
+    def _add_entity_relationships(
+        self, api_spec: ApiSpec, relationships: Dict[str, List[str]]
+    ) -> ApiSpec:
         """Dodaje związki między encjami do modeli"""
 
         for model in api_spec.models:
-            model_name = model['name']
+            model_name = model["name"]
             if model_name in relationships:
                 # Dodaj foreign key fields
                 for related_entity in relationships[model_name]:
                     fk_field = {
-                        'name': f"{related_entity.lower()}_id",
-                        'type': 'integer',
-                        'required': False,
-                        'description': f"Reference to {related_entity}"
+                        "name": f"{related_entity.lower()}_id",
+                        "type": "integer",
+                        "required": False,
+                        "description": f"Reference to {related_entity}",
                     }
 
                     # Sprawdź czy pole już nie istnieje
-                    existing_fields = [f['name'] for f in model.get('fields', [])]
-                    if fk_field['name'] not in existing_fields:
-                        model.setdefault('fields', []).append(fk_field)
+                    existing_fields = [f["name"] for f in model.get("fields", [])]
+                    if fk_field["name"] not in existing_fields:
+                        model.setdefault("fields", []).append(fk_field)
 
         return api_spec
 
@@ -183,11 +190,11 @@ class MCPIntegration:
         """Stosuje szablony specyficzne dla domeny"""
 
         domain_keywords = {
-            'ecommerce': ['product', 'order', 'cart', 'payment', 'customer'],
-            'blog': ['post', 'comment', 'tag', 'author', 'category'],
-            'cms': ['content', 'page', 'article', 'media', 'user'],
-            'crm': ['customer', 'lead', 'contact', 'deal', 'company'],
-            'hrm': ['employee', 'department', 'position', 'salary', 'leave']
+            "ecommerce": ["product", "order", "cart", "payment", "customer"],
+            "blog": ["post", "comment", "tag", "author", "category"],
+            "cms": ["content", "page", "article", "media", "user"],
+            "crm": ["customer", "lead", "contact", "deal", "company"],
+            "hrm": ["employee", "department", "position", "salary", "leave"],
         }
 
         detected_domain = self._detect_domain(api_spec, domain_keywords)
@@ -197,10 +204,14 @@ class MCPIntegration:
 
         return api_spec
 
-    def _detect_domain(self, api_spec: ApiSpec, domain_keywords: Dict[str, List[str]]) -> Optional[str]:
+    def _detect_domain(
+        self, api_spec: ApiSpec, domain_keywords: Dict[str, List[str]]
+    ) -> Optional[str]:
         """Wykrywa domenę aplikacji"""
 
-        text = f"{api_spec.description} {' '.join([m['name'] for m in api_spec.models])}"
+        text = (
+            f"{api_spec.description} {' '.join([m['name'] for m in api_spec.models])}"
+        )
         text_lower = text.lower()
 
         domain_scores = {}
@@ -215,66 +226,69 @@ class MCPIntegration:
 
         return None
 
-    async def _apply_domain_enhancements(self, api_spec: ApiSpec, domain: str) -> ApiSpec:
+    async def _apply_domain_enhancements(
+        self, api_spec: ApiSpec, domain: str
+    ) -> ApiSpec:
         """Stosuje ulepszenia specyficzne dla domeny"""
 
         domain_enhancements = {
-            'ecommerce': {
-                'additional_endpoints': [
+            "ecommerce": {
+                "additional_endpoints": [
                     {
-                        'path': '/cart/add',
-                        'method': 'POST',
-                        'name': 'add_to_cart',
-                        'description': 'Add item to shopping cart'
+                        "path": "/cart/add",
+                        "method": "POST",
+                        "name": "add_to_cart",
+                        "description": "Add item to shopping cart",
                     },
                     {
-                        'path': '/orders/{id}/status',
-                        'method': 'PUT',
-                        'name': 'update_order_status',
-                        'description': 'Update order status'
-                    }
+                        "path": "/orders/{id}/status",
+                        "method": "PUT",
+                        "name": "update_order_status",
+                        "description": "Update order status",
+                    },
                 ],
-                'required_auth': True,
-                'database_required': True
+                "required_auth": True,
+                "database_required": True,
             },
-            'blog': {
-                'additional_endpoints': [
+            "blog": {
+                "additional_endpoints": [
                     {
-                        'path': '/posts/{id}/comments',
-                        'method': 'GET',
-                        'name': 'get_post_comments',
-                        'description': 'Get comments for a post'
+                        "path": "/posts/{id}/comments",
+                        "method": "GET",
+                        "name": "get_post_comments",
+                        "description": "Get comments for a post",
                     }
                 ],
-                'auth_type': 'jwt'
-            }
+                "auth_type": "jwt",
+            },
         }
 
         if domain in domain_enhancements:
             enhancements = domain_enhancements[domain]
 
             # Dodaj dodatkowe endpointy
-            if 'additional_endpoints' in enhancements:
-                for ep_data in enhancements['additional_endpoints']:
+            if "additional_endpoints" in enhancements:
+                for ep_data in enhancements["additional_endpoints"]:
                     # Sprawdź czy endpoint już nie istnieje
                     existing_paths = [ep.path for ep in api_spec.endpoints]
-                    if ep_data['path'] not in existing_paths:
+                    if ep_data["path"] not in existing_paths:
                         from .analyzer import HttpMethod
+
                         new_endpoint = Endpoint(
-                            path=ep_data['path'],
-                            method=HttpMethod(ep_data['method']),
-                            name=ep_data['name'],
-                            description=ep_data['description'],
-                            parameters=[]
+                            path=ep_data["path"],
+                            method=HttpMethod(ep_data["method"]),
+                            name=ep_data["name"],
+                            description=ep_data["description"],
+                            parameters=[],
                         )
                         api_spec.endpoints.append(new_endpoint)
 
             # Aktualizuj wymagania
-            if 'required_auth' in enhancements and enhancements['required_auth']:
-                api_spec.auth_type = api_spec.auth_type or 'jwt'
+            if "required_auth" in enhancements and enhancements["required_auth"]:
+                api_spec.auth_type = api_spec.auth_type or "jwt"
 
-            if 'database_required' in enhancements:
-                api_spec.database_required = enhancements['database_required']
+            if "database_required" in enhancements:
+                api_spec.database_required = enhancements["database_required"]
 
         return api_spec
 
@@ -285,32 +299,35 @@ class MCPIntegration:
         security_needs = self._analyze_security_needs(api_spec)
 
         # Dodaj odpowiednie zabezpieczenia
-        if 'authentication' in security_needs:
-            api_spec.auth_type = api_spec.auth_type or 'jwt'
+        if "authentication" in security_needs:
+            api_spec.auth_type = api_spec.auth_type or "jwt"
 
-        if 'data_protection' in security_needs:
+        if "data_protection" in security_needs:
             # Dodaj pola związane z GDPR/privacy
             for model in api_spec.models:
-                if any(field['name'] in ['email', 'phone', 'name'] for field in model.get('fields', [])):
+                if any(
+                    field["name"] in ["email", "phone", "name"]
+                    for field in model.get("fields", [])
+                ):
                     privacy_fields = [
                         {
-                            'name': 'privacy_consent',
-                            'type': 'boolean',
-                            'required': False,
-                            'description': 'User privacy consent status'
+                            "name": "privacy_consent",
+                            "type": "boolean",
+                            "required": False,
+                            "description": "User privacy consent status",
                         },
                         {
-                            'name': 'data_retention_date',
-                            'type': 'datetime',
-                            'required': False,
-                            'description': 'Data retention expiry date'
-                        }
+                            "name": "data_retention_date",
+                            "type": "datetime",
+                            "required": False,
+                            "description": "Data retention expiry date",
+                        },
                     ]
 
-                    existing_fields = [f['name'] for f in model.get('fields', [])]
+                    existing_fields = [f["name"] for f in model.get("fields", [])]
                     for field in privacy_fields:
-                        if field['name'] not in existing_fields:
-                            model.setdefault('fields', []).append(field)
+                        if field["name"] not in existing_fields:
+                            model.setdefault("fields", []).append(field)
 
         return api_spec
 
@@ -321,17 +338,29 @@ class MCPIntegration:
         description_lower = api_spec.description.lower()
 
         # Sprawdź różne wzorce bezpieczeństwa
-        if any(word in description_lower for word in ['user', 'login', 'account', 'profile']):
-            needs.append('authentication')
+        if any(
+            word in description_lower
+            for word in ["user", "login", "account", "profile"]
+        ):
+            needs.append("authentication")
 
-        if any(word in description_lower for word in ['personal', 'private', 'sensitive', 'gdpr']):
-            needs.append('data_protection')
+        if any(
+            word in description_lower
+            for word in ["personal", "private", "sensitive", "gdpr"]
+        ):
+            needs.append("data_protection")
 
-        if any(word in description_lower for word in ['payment', 'transaction', 'money', 'billing']):
-            needs.append('financial_security')
+        if any(
+            word in description_lower
+            for word in ["payment", "transaction", "money", "billing"]
+        ):
+            needs.append("financial_security")
 
-        if any(word in description_lower for word in ['admin', 'manage', 'control', 'moderate']):
-            needs.append('authorization')
+        if any(
+            word in description_lower
+            for word in ["admin", "manage", "control", "moderate"]
+        ):
+            needs.append("authorization")
 
         return needs
 
@@ -342,19 +371,19 @@ class MCPIntegration:
         performance_issues = self._analyze_performance_needs(api_spec)
 
         # Dodaj odpowiednie optymalizacje
-        if 'caching' in performance_issues:
+        if "caching" in performance_issues:
             # Dodaj cache headers do endpointów GET
             for endpoint in api_spec.endpoints:
-                if endpoint.method.value == 'GET':
+                if endpoint.method.value == "GET":
                     endpoint.description += " (with caching)"
 
-        if 'pagination' in performance_issues:
+        if "pagination" in performance_issues:
             # Dodaj parametry paginacji do endpointów listujących
             for endpoint in api_spec.endpoints:
-                if 'list' in endpoint.name or endpoint.path.count('/') == 1:
+                if "list" in endpoint.name or endpoint.path.count("/") == 1:
                     pagination_params = [
-                        Field(name='page', type='integer', required=False, default=1),
-                        Field(name='limit', type='integer', required=False, default=20)
+                        Field(name="page", type="integer", required=False, default=1),
+                        Field(name="limit", type="integer", required=False, default=20),
                     ]
 
                     existing_params = [p.name for p in endpoint.parameters]
@@ -370,22 +399,24 @@ class MCPIntegration:
         needs = []
 
         # Sprawdź czy są endpointy do listowania
-        has_list_endpoints = any('list' in ep.name for ep in api_spec.endpoints)
+        has_list_endpoints = any("list" in ep.name for ep in api_spec.endpoints)
         if has_list_endpoints:
-            needs.append('pagination')
+            needs.append("pagination")
 
         # Sprawdź czy są endpointy GET (mogą korzystać z cache)
-        has_get_endpoints = any(ep.method.value == 'GET' for ep in api_spec.endpoints)
+        has_get_endpoints = any(ep.method.value == "GET" for ep in api_spec.endpoints)
         if has_get_endpoints:
-            needs.append('caching')
+            needs.append("caching")
 
         # Sprawdź czy jest dużo modeli (może potrzebować optymalizacji DB)
         if len(api_spec.models) > 3:
-            needs.append('database_optimization')
+            needs.append("database_optimization")
 
         return needs
 
-    async def get_enhancement_report(self, original_spec: ApiSpec, enhanced_spec: ApiSpec) -> Dict[str, Any]:
+    async def get_enhancement_report(
+        self, original_spec: ApiSpec, enhanced_spec: ApiSpec
+    ) -> Dict[str, Any]:
         """Generuje raport z ulepszeń wprowadzonych przez MCP"""
 
         report = {
@@ -397,7 +428,7 @@ class MCPIntegration:
             "original_endpoints": len(original_spec.endpoints),
             "enhanced_endpoints": len(enhanced_spec.endpoints),
             "original_models": len(original_spec.models),
-            "enhanced_models": len(enhanced_spec.models)
+            "enhanced_models": len(enhanced_spec.models),
         }
 
         # Porównaj endpointy
@@ -407,11 +438,17 @@ class MCPIntegration:
 
         report["endpoints_added"] = len(new_paths)
         if new_paths:
-            report["enhancements_applied"].append(f"Added {len(new_paths)} new endpoints")
+            report["enhancements_applied"].append(
+                f"Added {len(new_paths)} new endpoints"
+            )
 
         # Porównaj modele
-        original_model_fields = sum(len(m.get('fields', [])) for m in original_spec.models)
-        enhanced_model_fields = sum(len(m.get('fields', [])) for m in enhanced_spec.models)
+        original_model_fields = sum(
+            len(m.get("fields", [])) for m in original_spec.models
+        )
+        enhanced_model_fields = sum(
+            len(m.get("fields", [])) for m in enhanced_spec.models
+        )
         fields_added = enhanced_model_fields - original_model_fields
 
         report["fields_added"] = fields_added
@@ -423,8 +460,12 @@ class MCPIntegration:
             report["security_improvements"].append("Added authentication")
 
         # Sprawdź optymalizacje wydajności
-        enhanced_pagination = any('page' in [p.name for p in ep.parameters] for ep in enhanced_spec.endpoints)
-        original_pagination = any('page' in [p.name for p in ep.parameters] for ep in original_spec.endpoints)
+        enhanced_pagination = any(
+            "page" in [p.name for p in ep.parameters] for ep in enhanced_spec.endpoints
+        )
+        original_pagination = any(
+            "page" in [p.name for p in ep.parameters] for ep in original_spec.endpoints
+        )
 
         if enhanced_pagination and not original_pagination:
             report["performance_optimizations"].append("Added pagination support")

@@ -17,7 +17,7 @@ class GRPCGenerator:
     def __init__(self):
         self.file_manager = FileManager()
         self.templates = self._load_templates()
-        
+
     def _get_docstring(self, text: str) -> str:
         """Get a docstring for a method."""
         return f'"""{text}"""'
@@ -311,77 +311,70 @@ if __name__ == '__main__':
     serve()
 """
 
-        return {
-            'proto': proto_template,
-            'server.py': server_template
-        }
+        return {"proto": proto_template, "server.py": server_template}
 
     def get_proto_type(self, field_type: str) -> str:
         """Map Python types to Protocol Buffer types"""
         type_mapping = {
-            'string': 'string',
-            'int': 'int32',
-            'float': 'float',
-            'bool': 'bool',
-            'bytes': 'bytes',
+            "string": "string",
+            "int": "int32",
+            "float": "float",
+            "bool": "bool",
+            "bytes": "bytes",
         }
-        return type_mapping.get(field_type, 'string')
+        return type_mapping.get(field_type, "string")
 
     async def generate(self, api_spec: ApiSpec, output_path: Path) -> Dict[str, str]:
         """
         Generuje kod gRPC na podstawie specyfikacji API
-        
+
         Args:
             api_spec: Specyfikacja API
             output_path: Ścieżka do katalogu wyjściowego
-            
+
         Returns:
             Słownik zawierający wygenerowane pliki
         """
         generated_files = {}
         env = Environment()
-        
+
         # Create output directories
-        proto_dir = output_path / 'protos'
+        proto_dir = output_path / "protos"
         proto_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Generate .proto file
-        proto_template = env.from_string(self.templates['proto'])
+        proto_template = env.from_string(self.templates["proto"])
         proto_content = proto_template.render(
-            api_spec=api_spec,
-            self={
-                'get_proto_type': self.get_proto_type
-            }
+            api_spec=api_spec, self={"get_proto_type": self.get_proto_type}
         )
-        
+
         proto_file = proto_dir / f"{api_spec.name.lower()}.proto"
         await self.file_manager.write_file(proto_file, proto_content)
-        generated_files['proto'] = str(proto_file)
-        
+        generated_files["proto"] = str(proto_file)
+
         # Generate server.py
-        server_template = env.from_string(self.templates['server.py'])
+        server_template = env.from_string(self.templates["server.py"])
         server_content = server_template.render(
-            api_spec=api_spec,
-            self={
-                'get_proto_type': self.get_proto_type
-            }
+            api_spec=api_spec, self={"get_proto_type": self.get_proto_type}
         )
-        
-        server_file = output_path / 'server.py'
+
+        server_file = output_path / "server.py"
         await self.file_manager.write_file(server_file, server_content)
-        generated_files['server.py'] = str(server_file)
-        
+        generated_files["server.py"] = str(server_file)
+
         # Generate requirements.txt
         requirements = [
-            'grpcio>=1.54.0',
-            'grpcio-tools>=1.54.0',
-            'protobuf>=4.22.0',
+            "grpcio>=1.54.0",
+            "grpcio-tools>=1.54.0",
+            "protobuf>=4.22.0",
         ]
-        
-        requirements_file = output_path / 'requirements.txt'
-        await self.file_manager.write_file(requirements_file, '\n'.join(requirements) + '\n')
-        generated_files['requirements.txt'] = str(requirements_file)
-        
+
+        requirements_file = output_path / "requirements.txt"
+        await self.file_manager.write_file(
+            requirements_file, "\n".join(requirements) + "\n"
+        )
+        generated_files["requirements.txt"] = str(requirements_file)
+
         # Generate README.md
         readme_content = f"""# {api_spec.name} gRPC Service
 
@@ -414,20 +407,20 @@ This is an auto-generated gRPC service for {api_spec.name}.
 - Description: Health check endpoint
 
 """
-        
-        readme_file = output_path / 'README.md'
+
+        readme_file = output_path / "README.md"
         await self.file_manager.write_file(readme_file, readme_content)
-        generated_files['README.md'] = str(readme_file)
-        
+        generated_files["README.md"] = str(readme_file)
+
         # Generate compile script
         compile_script = f"""#!/bin/bash
 # Script to compile gRPC code
 
 python -m grpc_tools.protoc -I protos/ --python_out=. --grpc_python_out=. protos/{api_spec.name.lower()}.proto
 """
-        
+
         script_path = output_path / "compile_proto.sh"
         await self.file_manager.write_file(script_path, compile_script)
-        generated_files['compile_proto.sh'] = str(script_path)
-        
+        generated_files["compile_proto.sh"] = str(script_path)
+
         return generated_files

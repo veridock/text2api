@@ -28,20 +28,24 @@ class FileManager:
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    async def write_file(self, path: Union[str, Path], content: str, encoding: str = 'utf-8') -> None:
+    async def write_file(
+        self, path: Union[str, Path], content: str, encoding: str = "utf-8"
+    ) -> None:
         """Zapisuje plik asynchronicznie"""
         path = Path(path)
         await self.ensure_directory(path.parent)
 
-        async with aiofiles.open(path, 'w', encoding=encoding) as f:
+        async with aiofiles.open(path, "w", encoding=encoding) as f:
             await f.write(content)
 
-    async def read_file(self, path: Union[str, Path], encoding: str = 'utf-8') -> str:
+    async def read_file(self, path: Union[str, Path], encoding: str = "utf-8") -> str:
         """Odczytuje plik asynchronicznie"""
-        async with aiofiles.open(path, 'r', encoding=encoding) as f:
+        async with aiofiles.open(path, "r", encoding=encoding) as f:
             return await f.read()
 
-    async def write_json(self, path: Union[str, Path], data: Dict[str, Any], indent: int = 2) -> None:
+    async def write_json(
+        self, path: Union[str, Path], data: Dict[str, Any], indent: int = 2
+    ) -> None:
         """Zapisuje dane jako JSON"""
         content = json.dumps(data, indent=indent, ensure_ascii=False)
         await self.write_file(path, content)
@@ -79,10 +83,9 @@ class FileManager:
         """Usuwa katalog rekurencyjnie"""
         shutil.rmtree(path, ignore_errors=True)
 
-    def list_files(self,
-                   directory: Union[str, Path],
-                   pattern: str = "*",
-                   recursive: bool = False) -> List[Path]:
+    def list_files(
+        self, directory: Union[str, Path], pattern: str = "*", recursive: bool = False
+    ) -> List[Path]:
         """Lista plików w katalogu"""
         directory = Path(directory)
 
@@ -121,7 +124,9 @@ class FileManager:
             shutil.rmtree(self.temp_dir)
             self.temp_dir.mkdir(exist_ok=True)
 
-    async def backup_file(self, path: Union[str, Path], backup_suffix: str = ".backup") -> Path:
+    async def backup_file(
+        self, path: Union[str, Path], backup_suffix: str = ".backup"
+    ) -> Path:
         """Tworzy kopię zapasową pliku"""
         path = Path(path)
         backup_path = path.with_suffix(path.suffix + backup_suffix)
@@ -135,7 +140,7 @@ class FileManager:
         """Przywraca plik z kopii zapasowej"""
         backup_path = Path(backup_path)
         original_path = backup_path.with_suffix(
-            backup_path.suffix.replace('.backup', '')
+            backup_path.suffix.replace(".backup", "")
         )
 
         if backup_path.exists():
@@ -144,17 +149,19 @@ class FileManager:
 
         return original_path
 
-    def create_archive(self,
-                       source_dir: Union[str, Path],
-                       archive_path: Union[str, Path],
-                       format: str = "zip") -> None:
+    def create_archive(
+        self,
+        source_dir: Union[str, Path],
+        archive_path: Union[str, Path],
+        format: str = "zip",
+    ) -> None:
         """Tworzy archiwum z katalogu"""
         source_dir = Path(source_dir)
         archive_path = Path(archive_path)
 
         if format.lower() == "zip":
-            with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for file_path in source_dir.rglob('*'):
+            with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for file_path in source_dir.rglob("*"):
                     if file_path.is_file():
                         arcname = file_path.relative_to(source_dir)
                         zipf.write(file_path, arcname)
@@ -167,30 +174,29 @@ class FileManager:
         else:
             raise ValueError(f"Nieobsługiwany format archiwum: {format}")
 
-    def extract_archive(self,
-                        archive_path: Union[str, Path],
-                        extract_to: Union[str, Path]) -> None:
+    def extract_archive(
+        self, archive_path: Union[str, Path], extract_to: Union[str, Path]
+    ) -> None:
         """Wypakuje archiwum"""
         archive_path = Path(archive_path)
         extract_to = Path(extract_to)
 
         extract_to.mkdir(parents=True, exist_ok=True)
 
-        if archive_path.suffix.lower() == '.zip':
-            with zipfile.ZipFile(archive_path, 'r') as zipf:
+        if archive_path.suffix.lower() == ".zip":
+            with zipfile.ZipFile(archive_path, "r") as zipf:
                 zipf.extractall(extract_to)
 
-        elif archive_path.suffix.lower() in ['.tar', '.gz', '.tgz']:
-            with tarfile.open(archive_path, 'r:*') as tarf:
+        elif archive_path.suffix.lower() in [".tar", ".gz", ".tgz"]:
+            with tarfile.open(archive_path, "r:*") as tarf:
                 tarf.extractall(extract_to)
 
         else:
             raise ValueError(f"Nieobsługiwany format archiwum: {archive_path.suffix}")
 
-    async def watch_file_changes(self,
-                                 path: Union[str, Path],
-                                 callback,
-                                 interval: float = 1.0) -> None:
+    async def watch_file_changes(
+        self, path: Union[str, Path], callback, interval: float = 1.0
+    ) -> None:
         """Monitoruje zmiany w pliku (prosty polling)"""
         path = Path(path)
         last_modified = path.stat().st_mtime if path.exists() else 0
@@ -227,13 +233,12 @@ class FileManager:
             "is_directory": path.is_dir(),
             "is_file": path.is_file(),
             "permissions": oct(stat.st_mode)[-3:],
-            "extension": path.suffix
+            "extension": path.suffix,
         }
 
-    def find_files_by_content(self,
-                              directory: Union[str, Path],
-                              search_term: str,
-                              file_pattern: str = "*.py") -> List[Path]:
+    def find_files_by_content(
+        self, directory: Union[str, Path], search_term: str, file_pattern: str = "*.py"
+    ) -> List[Path]:
         """Znajdź pliki zawierające określony tekst"""
         directory = Path(directory)
         matching_files = []
@@ -241,7 +246,7 @@ class FileManager:
         for file_path in directory.rglob(file_pattern):
             if file_path.is_file():
                 try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
+                    with open(file_path, "r", encoding="utf-8") as f:
                         content = f.read()
                         if search_term in content:
                             matching_files.append(file_path)
@@ -250,10 +255,9 @@ class FileManager:
 
         return matching_files
 
-    async def batch_process_files(self,
-                                  files: List[Path],
-                                  processor_func,
-                                  max_concurrent: int = 10) -> List[Any]:
+    async def batch_process_files(
+        self, files: List[Path], processor_func, max_concurrent: int = 10
+    ) -> List[Any]:
         """Przetwarza pliki wsadowo z ograniczeniem współbieżności"""
 
         semaphore = asyncio.Semaphore(max_concurrent)
@@ -270,7 +274,7 @@ class FileManager:
         directory = Path(directory)
         total_size = 0
 
-        for file_path in directory.rglob('*'):
+        for file_path in directory.rglob("*"):
             if file_path.is_file():
                 total_size += file_path.stat().st_size
 
@@ -278,35 +282,34 @@ class FileManager:
 
     def format_file_size(self, size_bytes: int) -> str:
         """Formatuje rozmiar pliku do czytelnej formy"""
-        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        for unit in ["B", "KB", "MB", "GB", "TB"]:
             if size_bytes < 1024.0:
                 return f"{size_bytes:.1f} {unit}"
             size_bytes /= 1024.0
         return f"{size_bytes:.1f} PB"
 
-    async def sync_directories(self,
-                               source: Union[str, Path],
-                               target: Union[str, Path],
-                               exclude_patterns: List[str] = None) -> Dict[str, List[str]]:
+    async def sync_directories(
+        self,
+        source: Union[str, Path],
+        target: Union[str, Path],
+        exclude_patterns: List[str] = None,
+    ) -> Dict[str, List[str]]:
         """Synchronizuje katalogi (podstawowa implementacja)"""
         source = Path(source)
         target = Path(target)
         exclude_patterns = exclude_patterns or []
 
-        result = {
-            "copied": [],
-            "updated": [],
-            "deleted": [],
-            "errors": []
-        }
+        result = {"copied": [], "updated": [], "deleted": [], "errors": []}
 
         try:
             # Kopiuj/aktualizuj pliki
-            for source_file in source.rglob('*'):
+            for source_file in source.rglob("*"):
                 if source_file.is_file():
                     # Sprawdź wykluczenia
                     relative_path = source_file.relative_to(source)
-                    if any(relative_path.match(pattern) for pattern in exclude_patterns):
+                    if any(
+                        relative_path.match(pattern) for pattern in exclude_patterns
+                    ):
                         continue
 
                     target_file = target / relative_path
@@ -321,7 +324,7 @@ class FileManager:
 
             # Usuń pliki, które nie istnieją w source
             if target.exists():
-                for target_file in target.rglob('*'):
+                for target_file in target.rglob("*"):
                     if target_file.is_file():
                         relative_path = target_file.relative_to(target)
                         source_file = source / relative_path

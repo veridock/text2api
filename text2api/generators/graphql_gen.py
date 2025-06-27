@@ -9,6 +9,7 @@ from jinja2 import Environment
 from ..core.analyzer import ApiSpec
 from ..utils.file_utils import FileManager
 
+
 class GraphQLGenerator:
     """Generator kodu GraphQL z Graphene"""
 
@@ -108,26 +109,24 @@ def index():
 
 if __name__ == '__main__':
     app.run(debug=True)"""
-        return {'app.py': template}
+        return {"app.py": template}
 
     def generate(self, api_spec: ApiSpec, output_path: Path) -> Dict[str, str]:
         """
         Generuje kod GraphQL na podstawie specyfikacji API
-        
+
         Args:
             api_spec: Specyfikacja API
             output_path: Ścieżka do katalogu wyjściowego
-            
+
         Returns:
             Słownik zawierający wygenerowane pliki
         """
         env = Environment()
-        template = env.from_string(self.templates['app.py'])
+        template = env.from_string(self.templates["app.py"])
         rendered = template.render(api_spec=api_spec)
-        
-        output_file = output_path / 'app.py'
+
+        output_file = output_path / "app.py"
         self.file_manager.write_file(output_file, rendered)
-        
-        return {
-            'app.py': str(output_file)
-        }
+
+        return {"app.py": str(output_file)}

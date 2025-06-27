@@ -21,23 +21,20 @@ class OllamaClient:
     """Klient do komunikacji z serwerem Ollama"""
 
     def __init__(self, base_url: str = "http://localhost:11434"):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.timeout = httpx.Timeout(300.0)  # 5 minut timeout
 
-    async def generate(self,
-                       model: str,
-                       prompt: str,
-                       format: Optional[str] = None,
-                       stream: bool = False,
-                       **kwargs) -> str:
+    async def generate(
+        self,
+        model: str,
+        prompt: str,
+        format: Optional[str] = None,
+        stream: bool = False,
+        **kwargs,
+    ) -> str:
         """Generuje odpowiedź z modelu"""
 
-        payload = {
-            "model": model,
-            "prompt": prompt,
-            "stream": stream,
-            **kwargs
-        }
+        payload = {"model": model, "prompt": prompt, "stream": stream, **kwargs}
 
         if format:
             payload["format"] = format
@@ -45,8 +42,7 @@ class OllamaClient:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
                 response = await client.post(
-                    f"{self.base_url}/api/generate",
-                    json=payload
+                    f"{self.base_url}/api/generate", json=payload
                 )
                 response.raise_for_status()
 
@@ -61,25 +57,17 @@ class OllamaClient:
             except json.JSONDecodeError as e:
                 raise Exception(f"Błąd parsowania odpowiedzi Ollama: {e}")
 
-    async def generate_stream(self,
-                              model: str,
-                              prompt: str,
-                              **kwargs) -> AsyncGenerator[str, None]:
+    async def generate_stream(
+        self, model: str, prompt: str, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Generuje strumieniową odpowiedź"""
 
-        payload = {
-            "model": model,
-            "prompt": prompt,
-            "stream": True,
-            **kwargs
-        }
+        payload = {"model": model, "prompt": prompt, "stream": True, **kwargs}
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
                 async with client.stream(
-                        "POST",
-                        f"{self.base_url}/api/generate",
-                        json=payload
+                    "POST", f"{self.base_url}/api/generate", json=payload
                 ) as response:
                     response.raise_for_status()
 
@@ -97,25 +85,14 @@ class OllamaClient:
             except httpx.HTTPError as e:
                 raise Exception(f"Błąd komunikacji strumieniowej z Ollama: {e}")
 
-    async def chat(self,
-                   model: str,
-                   messages: List[Dict[str, str]],
-                   **kwargs) -> str:
+    async def chat(self, model: str, messages: List[Dict[str, str]], **kwargs) -> str:
         """Chat z modelem używając formatu wiadomości"""
 
-        payload = {
-            "model": model,
-            "messages": messages,
-            "stream": False,
-            **kwargs
-        }
+        payload = {"model": model, "messages": messages, "stream": False, **kwargs}
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                response = await client.post(
-                    f"{self.base_url}/api/chat",
-                    json=payload
-                )
+                response = await client.post(f"{self.base_url}/api/chat", json=payload)
                 response.raise_for_status()
 
                 result = response.json()
@@ -140,7 +117,7 @@ class OllamaClient:
                         name=model_data["name"],
                         size=model_data.get("size", ""),
                         digest=model_data.get("digest", ""),
-                        modified_at=model_data.get("modified_at", "")
+                        modified_at=model_data.get("modified_at", ""),
                     )
                     models.append(model)
 
@@ -156,10 +133,7 @@ class OllamaClient:
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                response = await client.post(
-                    f"{self.base_url}/api/pull",
-                    json=payload
-                )
+                response = await client.post(f"{self.base_url}/api/pull", json=payload)
                 response.raise_for_status()
                 return True
 
@@ -210,7 +184,9 @@ class OllamaClient:
 
         return full_response
 
-    async def analyze_api_requirements(self, text: str, language: str = "en") -> Dict[str, Any]:
+    async def analyze_api_requirements(
+        self, text: str, language: str = "en"
+    ) -> Dict[str, Any]:
         """Specjalna metoda do analizy wymagań API"""
 
         # Upewnij się, że model jest dostępny
@@ -230,7 +206,7 @@ class OllamaClient:
                 prompt=prompt,
                 format="json",
                 temperature=0.3,  # Mniej kreatywności, więcej precyzji
-                top_p=0.9
+                top_p=0.9,
             )
 
             return json.loads(response)
@@ -331,7 +307,7 @@ Return exactly in this JSON format (no additional comments):
     "database_required": true,
     "external_apis": []
 }}
-"""
+""",
         }
 
         template = language_prompts.get(language, language_prompts["en"])
@@ -373,12 +349,12 @@ Return exactly in this JSON format (no additional comments):
                         {
                             "name": "items",
                             "type": "array",
-                            "description": "List of items"
+                            "description": "List of items",
                         }
-                    ]
+                    ],
                 }
             ],
             "auth_required": False,
             "database_required": True,
-            "external_apis": []
+            "external_apis": [],
         }

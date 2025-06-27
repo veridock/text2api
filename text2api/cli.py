@@ -32,17 +32,35 @@ def cli():
 
 
 @cli.command()
-@click.argument('description', type=str)
-@click.option('--output', '-o', default=None, help='Nazwa folderu wyjściowego')
-@click.option('--type', '-t', type=click.Choice(['rest', 'graphql', 'grpc', 'websocket', 'cli']),
-              help='Wymusza określony typ API')
-@click.option('--framework', '-f', help='Wymusza określony framework')
-@click.option('--no-docker', is_flag=True, help='Nie generuj plików Docker')
-@click.option('--no-tests', is_flag=True, help='Nie generuj testów')
-@click.option('--no-docs', is_flag=True, help='Nie generuj dokumentacji')
-@click.option('--ollama-url', default='http://localhost:11434', help='URL serwera Ollama')
-@click.option('--output-dir', default='./generated_apis', help='Katalog bazowy dla projektów')
-def generate(description, output, type, framework, no_docker, no_tests, no_docs, ollama_url, output_dir):
+@click.argument("description", type=str)
+@click.option("--output", "-o", default=None, help="Nazwa folderu wyjściowego")
+@click.option(
+    "--type",
+    "-t",
+    type=click.Choice(["rest", "graphql", "grpc", "websocket", "cli"]),
+    help="Wymusza określony typ API",
+)
+@click.option("--framework", "-f", help="Wymusza określony framework")
+@click.option("--no-docker", is_flag=True, help="Nie generuj plików Docker")
+@click.option("--no-tests", is_flag=True, help="Nie generuj testów")
+@click.option("--no-docs", is_flag=True, help="Nie generuj dokumentacji")
+@click.option(
+    "--ollama-url", default="http://localhost:11434", help="URL serwera Ollama"
+)
+@click.option(
+    "--output-dir", default="./generated_apis", help="Katalog bazowy dla projektów"
+)
+def generate(
+    description,
+    output,
+    type,
+    framework,
+    no_docker,
+    no_tests,
+    no_docs,
+    ollama_url,
+    output_dir,
+):
     """
     Generuje API na podstawie opisu tekstowego
 
@@ -58,9 +76,9 @@ def generate(description, output, type, framework, no_docker, no_tests, no_docs,
         generator = APIGenerator(output_dir=output_dir, ollama_url=ollama_url)
 
         with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                console=console,
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
         ) as progress:
             task = progress.add_task("🔍 Analizuję opis...", total=None)
 
@@ -70,49 +88,52 @@ def generate(description, output, type, framework, no_docker, no_tests, no_docs,
                 result = await generator.generate(
                     description=description,
                     api_type=api_type,
-                    framework=framework if framework else "fastapi"
+                    framework=framework if framework else "fastapi",
                 )
 
                 progress.remove_task(task)
 
-
-                if result.get('status') == 'success':
-                    project_path = result.get('project_dir', 'unknown')
-                    console.print(Panel.fit(
-                        f"✅ API wygenerowane pomyślnie!\n\n"
-                        f"📁 Lokalizacja: {project_path}\n"
-                        f"🔧 Typ API: {result.get('api_type', 'unknown')}\n"
-                        f"⚡ Framework: {result.get('framework', 'unknown')}\n"
-                        f"📄 Pliki: {', '.join(result.get('files_generated', []))}",
-                        title="Sukces",
-                        border_style="green"
-                    ))
+                if result.get("status") == "success":
+                    project_path = result.get("project_dir", "unknown")
+                    console.print(
+                        Panel.fit(
+                            f"✅ API wygenerowane pomyślnie!\n\n"
+                            f"📁 Lokalizacja: {project_path}\n"
+                            f"🔧 Typ API: {result.get('api_type', 'unknown')}\n"
+                            f"⚡ Framework: {result.get('framework', 'unknown')}\n"
+                            f"📄 Pliki: {', '.join(result.get('files_generated', []))}",
+                            title="Sukces",
+                            border_style="green",
+                        )
+                    )
 
                     # Pokaż instrukcje
-                    if result['instructions']:
+                    if result["instructions"]:
                         console.print("\n📋 Instrukcje uruchomienia:")
-                        for i, instruction in enumerate(result['instructions'], 1):
+                        for i, instruction in enumerate(result["instructions"], 1):
                             console.print(f"  {i}. {instruction}")
 
                 else:
-                    console.print(Panel.fit(
-                        f"❌ Błąd generowania:\n{result['error']}",
-                        title="Błąd",
-                        border_style="red"
-                    ))
+                    console.print(
+                        Panel.fit(
+                            f"❌ Błąd generowania:\n{result['error']}",
+                            title="Błąd",
+                            border_style="red",
+                        )
+                    )
 
             except Exception as e:
-                console.print(Panel.fit(
-                    f"❌ Błąd wykonania:\n{str(e)}",
-                    title="Błąd",
-                    border_style="red"
-                ))
+                console.print(
+                    Panel.fit(
+                        f"❌ Błąd wykonania:\n{str(e)}", title="Błąd", border_style="red"
+                    )
+                )
 
         # Sprawdź status Ollama
         try:
             client = OllamaClient(base_url=ollama_url)
             models = await client.list_models()
-            
+
             if models:
                 console.print("\n✅ Ollama działa poprawnie!")
                 console.print(f"   Modele: {', '.join(models)}")
@@ -129,7 +150,7 @@ def generate(description, output, type, framework, no_docker, no_tests, no_docs,
 
 
 @cli.command()
-@click.argument('project_path', type=click.Path(exists=True))
+@click.argument("project_path", type=click.Path(exists=True))
 def info(project_path):
     """
     Pokazuje informacje o wygenerowanym projekcie
@@ -143,23 +164,25 @@ def info(project_path):
         return
 
     try:
-        with open(spec_file, 'r', encoding='utf-8') as f:
+        with open(spec_file, "r", encoding="utf-8") as f:
             spec = json.load(f)
 
         # Podstawowe info
-        console.print(Panel.fit(
-            f"📋 {spec['name']}\n"
-            f"📝 {spec['description']}\n"
-            f"🔧 {spec['api_type'].upper()} API ({spec['framework']})\n"
-            f"🌍 Język: {spec['language']}\n"
-            f"🔐 Auth: {'✅' if spec.get('auth_type') else '❌'}\n"
-            f"💾 Database: {'✅' if spec.get('database_required') else '❌'}",
-            title="Informacje o projekcie",
-            border_style="blue"
-        ))
+        console.print(
+            Panel.fit(
+                f"📋 {spec['name']}\n"
+                f"📝 {spec['description']}\n"
+                f"🔧 {spec['api_type'].upper()} API ({spec['framework']})\n"
+                f"🌍 Język: {spec['language']}\n"
+                f"🔐 Auth: {'✅' if spec.get('auth_type') else '❌'}\n"
+                f"💾 Database: {'✅' if spec.get('database_required') else '❌'}",
+                title="Informacje o projekcie",
+                border_style="blue",
+            )
+        )
 
         # Endpointy
-        if spec.get('endpoints'):
+        if spec.get("endpoints"):
             console.print("\n🛣️  Endpointy:")
 
             endpoint_table = Table()
@@ -168,25 +191,28 @@ def info(project_path):
             endpoint_table.add_column("Nazwa", style="green")
             endpoint_table.add_column("Opis", style="yellow")
 
-            for endpoint in spec['endpoints']:
+            for endpoint in spec["endpoints"]:
                 endpoint_table.add_row(
-                    endpoint['method'],
-                    endpoint['path'],
-                    endpoint['name'],
-                    endpoint.get('description', '')[:50] + ('...' if len(endpoint.get('description', '')) > 50 else '')
+                    endpoint["method"],
+                    endpoint["path"],
+                    endpoint["name"],
+                    endpoint.get("description", "")[:50]
+                    + ("..." if len(endpoint.get("description", "")) > 50 else ""),
                 )
 
             console.print(endpoint_table)
 
         # Modele
-        if spec.get('models'):
+        if spec.get("models"):
             console.print(f"\n📊 Modele danych: {len(spec['models'])}")
-            for model in spec['models']:
-                console.print(f"   • {model['name']} ({len(model.get('fields', []))} pól)")
+            for model in spec["models"]:
+                console.print(
+                    f"   • {model['name']} ({len(model.get('fields', []))} pól)"
+                )
 
         # Pliki w projekcie
-        files = list(project_path.rglob('*'))
-        files = [f for f in files if f.is_file() and not f.name.startswith('.')]
+        files = list(project_path.rglob("*"))
+        files = [f for f in files if f.is_file() and not f.name.startswith(".")]
 
         console.print(f"\n📁 Pliki w projekcie: {len(files)}")
 
@@ -196,13 +222,13 @@ def info(project_path):
             console.print(f"   cd {project_path}")
             console.print("   pip install -r requirements.txt")
 
-            if spec['framework'] == 'fastapi':
+            if spec["framework"] == "fastapi":
                 console.print("   uvicorn main:app --reload")
                 console.print("   Dokumentacja: http://localhost:8000/docs")
-            elif spec['framework'] == 'flask':
+            elif spec["framework"] == "flask":
                 console.print("   python app.py")
                 console.print("   API: http://localhost:5000")
-            elif spec['api_type'] == 'cli':
+            elif spec["api_type"] == "cli":
                 console.print("   python cli.py --help")
 
             if (project_path / "docker-compose.yml").exists():
@@ -214,9 +240,9 @@ def info(project_path):
 
 
 @cli.command()
-@click.argument('input_spec', type=click.Path(exists=True))
-@click.option('--output', '-o', help='Nazwa nowego projektu')
-@click.option('--framework', '-f', help='Zmień framework')
+@click.argument("input_spec", type=click.Path(exists=True))
+@click.option("--output", "-o", help="Nazwa nowego projektu")
+@click.option("--framework", "-f", help="Zmień framework")
 def regenerate(input_spec, output, framework):
     """
     Regeneruje projekt na podstawie istniejącej specyfikacji
@@ -226,12 +252,12 @@ def regenerate(input_spec, output, framework):
 
     async def _regenerate():
         try:
-            with open(input_spec, 'r', encoding='utf-8') as f:
+            with open(input_spec, "r", encoding="utf-8") as f:
                 spec_data = json.load(f)
 
             # Zmień framework jeśli podano
             if framework:
-                spec_data['framework'] = framework
+                spec_data["framework"] = framework
 
             console.print(f"🔄 Regeneruję projekt: {spec_data['name']}")
 
@@ -266,7 +292,7 @@ def list_projects():
             spec_file = item / "api_spec.json"
             if spec_file.exists():
                 try:
-                    with open(spec_file, 'r', encoding='utf-8') as f:
+                    with open(spec_file, "r", encoding="utf-8") as f:
                         spec = json.load(f)
                     projects.append((item.name, spec))
                 except:
@@ -288,9 +314,10 @@ def list_projects():
         if spec:
             table.add_row(
                 name,
-                spec.get('api_type', 'unknown').upper(),
-                spec.get('framework', 'unknown'),
-                spec.get('description', '')[:40] + ('...' if len(spec.get('description', '')) > 40 else '')
+                spec.get("api_type", "unknown").upper(),
+                spec.get("framework", "unknown"),
+                spec.get("description", "")[:40]
+                + ("..." if len(spec.get("description", "")) > 40 else ""),
             )
         else:
             table.add_row(name, "❌", "❌", "Błędna specyfikacja")
@@ -301,7 +328,7 @@ def list_projects():
 
 
 @cli.command()
-@click.option('--url', default='http://localhost:11434', help='URL serwera Ollama')
+@click.option("--url", default="http://localhost:11434", help="URL serwera Ollama")
 def models(url):
     """
     Zarządzaj modelami Ollama
@@ -328,23 +355,27 @@ def models(url):
                 table.add_row(
                     model.name,
                     model.size,
-                    model.modified_at[:19] if model.modified_at else "unknown"
+                    model.modified_at[:19] if model.modified_at else "unknown",
                 )
 
             console.print(table)
 
             # Sprawdź zalecane
-            recommended = ['llama3.1:8b', 'llama3.1:7b', 'llama3:8b']
+            recommended = ["llama3.1:8b", "llama3.1:7b", "llama3:8b"]
             available = [m.name for m in models]
             missing = [m for m in recommended if m not in available]
 
             if missing:
-                console.print(f"\n⚠️  Zalecane modele do pobrania: {', '.join(missing)}")
+                console.print(
+                    f"\n⚠️  Zalecane modele do pobrania: {', '.join(missing)}"
+                )
                 console.print("   ollama pull <model_name>")
 
         except Exception as e:
             console.print(f"[red]Błąd podczas sprawdzania modeli: {e}")
-            console.print("[yellow]Upewnij się, że serwer Ollama jest uruchomiony i dostępny pod podanym adresem.")
+            console.print(
+                "[yellow]Upewnij się, że serwer Ollama jest uruchomiony i dostępny pod podanym adresem."
+            )
             return
 
     asyncio.run(_models())
@@ -358,11 +389,13 @@ def main():
         console.print("\n👋 Przerwano przez użytkownika")
         return 1
     except Exception as e:
-        console.print(Panel.fit(
-            f"💥 Nieoczekiwany błąd:\n{str(e)}",
-            title="Krytyczny błąd",
-            border_style="red"
-        ))
+        console.print(
+            Panel.fit(
+                f"💥 Nieoczekiwany błąd:\n{str(e)}",
+                title="Krytyczny błąd",
+                border_style="red",
+            )
+        )
         return 1
     return 0
 
@@ -372,8 +405,8 @@ if __name__ == "__main__":
 
 
 @cli.command()
-@click.option('--file', '-f', type=click.Path(exists=True), help='Plik z opisem')
-@click.option('--interactive', '-i', is_flag=True, help='Tryb interaktywny')
+@click.option("--file", "-f", type=click.Path(exists=True), help="Plik z opisem")
+@click.option("--interactive", "-i", is_flag=True, help="Tryb interaktywny")
 def generate_from_file(file, interactive):
     """
     Generuje API z pliku tekstowego lub w trybie interaktywnym
@@ -382,7 +415,7 @@ def generate_from_file(file, interactive):
     if interactive:
         _interactive_mode()
     elif file:
-        with open(file, 'r', encoding='utf-8') as f:
+        with open(file, "r", encoding="utf-8") as f:
             description = f.read()
 
         console.print(f"📖 Wczytano opis z pliku: {file}")
@@ -391,6 +424,7 @@ def generate_from_file(file, interactive):
         if click.confirm("Kontynuować generowanie?"):
             # Użyj komendy generate
             from click.testing import CliRunner
+
             runner = CliRunner()
             runner.invoke(generate, [description])
     else:
@@ -400,27 +434,27 @@ def generate_from_file(file, interactive):
 def _interactive_mode():
     """Tryb interaktywny"""
 
-    console.print(Panel.fit(
-        "🤖 Tryb interaktywny text2api\n\n"
-        "Opisz swoją aplikację, a ja wygeneruję dla Ciebie kompletne API!",
-        title="text2api Interactive",
-        border_style="blue"
-    ))
+    console.print(
+        Panel.fit(
+            "🤖 Tryb interaktywny text2api\n\n"
+            "Opisz swoją aplikację, a ja wygeneruję dla Ciebie kompletne API!",
+            title="text2api Interactive",
+            border_style="blue",
+        )
+    )
 
     # Zbierz informacje
     description = click.prompt("\n📝 Opisz funkcjonalność API", type=str)
 
     api_type = click.prompt(
         "🔧 Typ API",
-        type=click.Choice(['rest', 'graphql', 'grpc', 'websocket', 'cli', 'auto']),
-        default='auto'
+        type=click.Choice(["rest", "graphql", "grpc", "websocket", "cli", "auto"]),
+        default="auto",
     )
 
-    if api_type == 'rest':
+    if api_type == "rest":
         framework = click.prompt(
-            "⚡ Framework",
-            type=click.Choice(['fastapi', 'flask']),
-            default='fastapi'
+            "⚡ Framework", type=click.Choice(["fastapi", "flask"]), default="fastapi"
         )
     else:
         framework = None
@@ -451,19 +485,20 @@ def _interactive_mode():
         # Wywołaj generate z parametrami
         args = [description]
         if output_name:
-            args.extend(['--output', output_name])
-        if api_type != 'auto':
-            args.extend(['--type', api_type])
+            args.extend(["--output", output_name])
+        if api_type != "auto":
+            args.extend(["--type", api_type])
         if framework:
-            args.extend(['--framework', framework])
+            args.extend(["--framework", framework])
         if not include_docker:
-            args.append('--no-docker')
+            args.append("--no-docker")
         if not include_tests:
-            args.append('--no-tests')
+            args.append("--no-tests")
         if not include_docs:
-            args.append('--no-docs')
+            args.append("--no-docs")
 
         from click.testing import CliRunner
+
         runner = CliRunner()
         runner.invoke(generate, args)
 
@@ -474,11 +509,13 @@ def examples():
     Pokazuje przykłady opisów do generowania API
     """
 
-    console.print(Panel.fit(
-        "📚 Przykłady opisów dla różnych typów API",
-        title="Przykłady",
-        border_style="green"
-    ))
+    console.print(
+        Panel.fit(
+            "📚 Przykłady opisów dla różnych typów API",
+            title="Przykłady",
+            border_style="green",
+        )
+    )
 
     for category, examples in SAMPLE_DESCRIPTIONS.items():
         console.print(f"\n🔸 {category.upper()}")
@@ -490,7 +527,7 @@ def examples():
 
 
 @cli.command()
-@click.option('--url', default='http://localhost:11434', help='URL serwera Ollama')
+@click.option("--url", default="http://localhost:11434", help="URL serwera Ollama")
 def check():
     """
     Sprawdza status narzędzi (Ollama, modele)
@@ -528,18 +565,24 @@ def check():
                     console.print(f"\n📋 Dostępne modele: {', '.join(model_names)}")
 
                     # Sprawdź czy jest llama3.1
-                    recommended = ['llama3.1:8b', 'llama3.1:7b', 'llama3:8b']
+                    recommended = ["llama3.1:8b", "llama3.1:7b", "llama3:8b"]
                     available_recommended = [m for m in model_names if m in recommended]
 
                     if available_recommended:
-                        console.print(f"✅ Zalecane modele dostępne: {', '.join(available_recommended)}")
+                        console.print(
+                            f"✅ Zalecane modele dostępne: {', '.join(available_recommended)}"
+                        )
                     else:
                         console.print("⚠️  Brak zalecanych modeli. Uruchom:")
                         console.print("   ollama pull llama3.1:8b")
                 else:
-                    table.add_row("Modele", "❌ Brak", "Pobierz model: ollama pull llama3.1:8b")
+                    table.add_row(
+                        "Modele", "❌ Brak", "Pobierz model: ollama pull llama3.1:8b"
+                    )
                     console.print(table)
 
             except Exception as e:
                 console.print(f"[red]Błąd podczas sprawdzania modeli: {e}")
-                console.print("[yellow]Upewnij się, że serwer Ollama jest uruchomiony i dostępny pod podanym adresem.")
+                console.print(
+                    "[yellow]Upewnij się, że serwer Ollama jest uruchomiony i dostępny pod podanym adresem."
+                )

@@ -1,4 +1,3 @@
-
 """
 Code generators for different API types and frameworks
 """
@@ -11,10 +10,10 @@ from .websocket_gen import WebSocketGenerator
 from .cli_gen import CLIGenerator
 
 __all__ = [
-    'FastAPIGenerator',
-    'FlaskGenerator',
-    'GraphQLGenerator',
-    'GRPCGenerator',
-    'WebSocketGenerator',
-    'CLIGenerator'
+    "FastAPIGenerator",
+    "FlaskGenerator",
+    "GraphQLGenerator",
+    "GRPCGenerator",
+    "WebSocketGenerator",
+    "CLIGenerator",
 ]
