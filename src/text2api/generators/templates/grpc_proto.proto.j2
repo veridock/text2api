@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package {{ api_spec.name.lower() }};
+
+// The {{ api_spec.name }} service definition.
+service {{ api_spec.name }}Service {
+    // Ping endpoint for health checks
+    rpc Ping (PingRequest) returns (PingResponse) {}
+    
+    // Add your gRPC methods here
+    {% for model in api_spec.models %}
+    rpc Create{{ model.name }} (Create{{ model.name }}Request) returns ({{ model.name }}Response) {}
+    rpc Get{{ model.name }} (Get{{ model.name }}Request) returns ({{ model.name }}Response) {}
+    rpc List{{ model.name }}s (List{{ model.name }}sRequest) returns (List{{ model.name }}sResponse) {}
+    rpc Update{{ model.name }} (Update{{ model.name }}Request) returns ({{ model.name }}Response) {}
+    rpc Delete{{ model.name }} (Delete{{ model.name }}Request) returns (Delete{{ model.name }}Response) {}
+    {% endfor %}
+}
+
+// Common responses
+message PingRequest {
+    string message = 1;
+}
+
+message PingResponse {
+    string message = 1;
+    string status = 2;
+}
+
+// Model definitions
+{% for model in api_spec.models %}
+message {{ model.name }} {
+    string id = 1;
+    {% for field in model.fields %}
+    {{ field.type }} {{ field.name }} = {{ loop.index + 1 }};
+    {% endfor %}
+    string created_at = 100;
+    string updated_at = 101;
+}
+{% endfor %}

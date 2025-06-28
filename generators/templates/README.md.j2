@@ -1,0 +1,12 @@
+# {{ api_spec.name }}
+
+{{ api_spec.description }}
+
+## Wygenerowane komendy CLI
+
+{% for model in api_spec.models %}
+- create_{{ model.name|lower }}
+- get_{{ model.name|lower }}
+- update_{{ model.name|lower }}
+- delete_{{ model.name|lower }}
+{% endfor %}

@@ -1,0 +1,27 @@
+import click
+
+@click.group()
+def cli():
+    """CLI for generated API"""
+    pass
+
+{% for model in api_spec.models %}
+@cli.command()
+def create_{{ model.name|lower }}():
+    click.echo("Create {{ model.name }}")
+
+@cli.command()
+def get_{{ model.name|lower }}():
+    click.echo("Get {{ model.name }}")
+
+@cli.command()
+def update_{{ model.name|lower }}():
+    click.echo("Update {{ model.name }}")
+
+@cli.command()
+def delete_{{ model.name|lower }}():
+    click.echo("Delete {{ model.name }}")
+{% endfor %}
+
+if __name__ == "__main__":
+    cli()

@@ -1,0 +1,197 @@
+version: '3.8'
+
+services:
+  # Ollama - lokalny LLM server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: text2api-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_ORIGINS=*
+      - OLLAMA_HOST=0.0.0.0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - text2api-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # text2api - główne narzędzie
+  text2api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        OLLAMA_URL: http://ollama:11434
+    container_name: text2api-app
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ./generated_apis:/app/generated_apis
+      - ./examples:/app/examples:ro
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - PYTHONPATH=/app
+    networks:
+      - text2api-network
+    working_dir: /app
+    # Pozostaje aktywny dla interaktywnych sesji
+    stdin_open: true
+    tty: true
+
+  # PostgreSQL - dla wygenerowanych API wymagających bazy danych
+  postgres:
+    image: postgres:15-alpine
+    container_name: text2api-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=text2api_db
+      - POSTGRES_USER=text2api
+      - POSTGRES_PASSWORD=text2api_password
+      - POSTGRES_MULTIPLE_DATABASES=true
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - text2api-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U text2api -d text2api_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis - dla cache'owania i sesji w wygenerowanych API
+  redis:
+    image: redis:7-alpine
+    container_name: text2api-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - text2api-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Nginx - reverse proxy dla wygenerowanych API
+  nginx:
+    image: nginx:alpine
+    container_name: text2api-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - text2api-network
+    depends_on:
+      - text2api
+
+  # Portainer - management UI dla kontenerów
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: text2api-portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - text2api-network
+
+  # Adminer - web UI dla bazy danych
+  adminer:
+    image: adminer:latest
+    container_name: text2api-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+    networks:
+      - text2api-network
+    depends_on:
+      - postgres
+
+  # Jupyter - dla eksperymentów i analizy
+  jupyter:
+    image: jupyter/scipy-notebook:latest
+    container_name: text2api-jupyter
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./generated_apis:/home/jovyan/work/generated_apis:ro
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=text2api
+    networks:
+      - text2api-network
+    user: root
+    command: >
+      bash -c "
+        pip install ollama httpx jinja2 &&
+        start-notebook.sh --NotebookApp.token='text2api' --NotebookApp.password='' --NotebookApp.allow_root=True
+      "
+
+networks:
+  text2api-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  ollama_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  portainer_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+# Dodatkowe konfiguracje
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-restart-policy: &restart-policy
+  restart: unless-stopped
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 30s
