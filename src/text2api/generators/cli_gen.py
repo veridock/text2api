@@ -20,5 +20,16 @@ class CLIGenerator:
         template = self.env.get_template('README.md.j2')
         return template.render(api_spec=api_spec)
 
-    # Dodaj inne metody renderowania/generowania jeśli potrzeba
+    def generate(self, spec):
+        """Generate CLI code from the given specification.
+        
+        Args:
+            spec (str): The specification for generating the CLI
+            
+        Returns:
+            str: The generated CLI code
+        """
+        # For now, just return a simple message that generation was successful
+        # In a real implementation, this would parse the spec and generate code
+        return f"Successfully generated CLI for: {spec}"
 

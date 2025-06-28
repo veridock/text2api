@@ -20,22 +20,27 @@ def test_cli_version():
     # Just check that it doesn't fail
     assert result.exit_code == 0
 
-@pytest.mark.parametrize("command,expected_output", [
-    (['generate', 'test'], 'Generating API for: test'),
-])
+@pytest.mark.parametrize(
+    "command, expected_output",
+    [
+        ("test", "Generowanie API dla: test"),
+    ],
+)
 def test_generate_command(command, expected_output, mocker):
     """Test the generate command with different inputs."""
-    # Mock the CLIGenerator to avoid actual API generation during tests
+    # Create a mock for the CLIGenerator class
     mock_generator = mocker.MagicMock()
+    # Make the generate method return a specific value
+    mock_generator.generate.return_value = f"Successfully generated CLI for: {command}"
+    # Patch the CLIGenerator class to return our mock instance
     mocker.patch('text2api.generators.cli_gen.CLIGenerator', return_value=mock_generator)
     
+    # Run the CLI command
     runner = CliRunner()
-    result = runner.invoke(cli_main, command)
+    result = runner.invoke(cli_main, ["generate", command])
     
+    # Verify the results
     assert result.exit_code == 0
-    if expected_output:
-        assert expected_output.lower() in result.output.lower()
-    
-    # Verify the generator was called if this is a generate command
-    if command[0] == 'generate':
-        mock_generator.generate.assert_called_once()
+    assert expected_output.lower() in result.output.lower()
+    # Verify the generate method was called with the correct argument
+    mock_generator.generate.assert_called_once_with(command)

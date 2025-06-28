@@ -16,10 +16,11 @@ def main():
 def generate(spec):
     """Wygeneruj API na podstawie specyfikacji tekstowej."""
     click.echo(f"Generowanie API dla: {spec}")
-    # Przykładowe wywołanie generatora (do dostosowania):
     generator = CLIGenerator()
-    # TODO: przekazać spec do generatora, np. generator.generate(spec)
-    click.echo("(Tu należy zaimplementować generowanie na podstawie spec)")
+    # Call the generator's generate method with the spec
+    result = generator.generate(spec)
+    if result:
+        click.echo(result)
 
 if __name__ == "__main__":
     main()
