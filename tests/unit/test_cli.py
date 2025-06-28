@@ -30,17 +30,18 @@ def test_generate_command(command, expected_output, mocker):
     """Test the generate command with different inputs."""
     # Create a mock for the CLIGenerator class
     mock_generator = mocker.MagicMock()
-    # Make the generate method return a specific value
     mock_generator.generate.return_value = f"Successfully generated CLI for: {command}"
-    # Patch the CLIGenerator class to return our mock instance
-    mocker.patch('text2api.generators.cli_gen.CLIGenerator', return_value=mock_generator)
     
-    # Run the CLI command
-    runner = CliRunner()
-    result = runner.invoke(cli_main, ["generate", command])
-    
-    # Verify the results
-    assert result.exit_code == 0
-    assert expected_output.lower() in result.output.lower()
-    # Verify the generate method was called with the correct argument
-    mock_generator.generate.assert_called_once_with(command)
+    # Patch the CLIGenerator class where it's used in the cli module
+    with mocker.patch('text2api.cli.CLIGenerator', return_value=mock_generator) as mock_cls:
+        # Run the CLI command with debug flag
+        runner = CliRunner()
+        result = runner.invoke(cli_main, ["generate", command, "--debug"])
+        
+        # Verify the results
+        assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}"
+        assert expected_output.lower() in result.output.lower(), \
+            f"Expected '{expected_output}' in output, got: {result.output}"
+        
+        # Verify the generate method was called with the correct argument
+        mock_generator.generate.assert_called_once_with(command)

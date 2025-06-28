@@ -13,12 +13,27 @@ def main():
 
 @main.command()
 @click.argument('spec', type=str)
-def generate(spec):
+@click.option('--debug', is_flag=True, help='Enable debug output')
+def generate(spec, debug):
     """Wygeneruj API na podstawie specyfikacji tekstowej."""
+    if debug:
+        click.echo("DEBUG: Starting generate command", err=True)
+        click.echo(f"DEBUG: spec = {spec!r}", err=True)
+    
     click.echo(f"Generowanie API dla: {spec}")
+    
+    if debug:
+        click.echo("DEBUG: Creating CLIGenerator instance", err=True)
     generator = CLIGenerator()
+    
+    if debug:
+        click.echo("DEBUG: Calling generator.generate()", err=True)
     # Call the generator's generate method with the spec
     result = generator.generate(spec)
+    
+    if debug:
+        click.echo(f"DEBUG: generator.generate() returned: {result!r}", err=True)
+    
     if result:
         click.echo(result)
 
