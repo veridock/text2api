@@ -1,0 +1,158 @@
+"""Auto-generated Python client for {{ project_name }} API."""
+import json
+from typing import Any, Dict, List, Optional, Union
+from datetime import datetime, date
+from enum import Enum
+import uuid
+
+import requests
+from pydantic import BaseModel, Field, validator
+
+class {{ project_name|title }}Client:
+    """Client for interacting with the {{ project_name }} API."""
+    
+    def __init__(self, base_url: str = "http://localhost:8000", api_key: Optional[str] = None):
+        """Initialize the client.
+        
+        Args:
+            base_url: Base URL of the API (default: http://localhost:8000)
+            api_key: Optional API key for authentication
+        """
+        self.base_url = base_url.rstrip('/')
+        self.session = requests.Session()
+        
+        # Set up headers
+        self.session.headers.update({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        })
+        
+        if api_key:
+            self.session.headers.update({'Authorization': f'Bearer {api_key}'})
+    
+    def _request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
+        """Make an HTTP request to the API.
+        
+        Args:
+            method: HTTP method (GET, POST, PUT, DELETE, etc.)
+            endpoint: API endpoint (e.g., '/items')
+            **kwargs: Additional arguments to pass to requests.request()
+            
+        Returns:
+            Parsed JSON response as a dictionary
+            
+        Raises:
+            HTTPError: If the request returns an error status code
+        """
+        url = f"{self.base_url}{endpoint}"
+        response = self.session.request(method, url, **kwargs)
+        response.raise_for_status()
+        
+        # Return empty dict for 204 No Content responses
+        if response.status_code == 204:
+            return {}
+            
+        return response.json()
+    
+    # Model-specific API methods
+    {% for model in models %}
+    # {{ model.name }} methods
+    def list_{{ model.name.lower() }}s(self, **params) -> List[Dict[str, Any]]:
+        """List all {{ model.name.lower() }}s.
+        
+        Args:
+            **params: Query parameters (e.g., skip, limit)
+            
+        Returns:
+            List of {{ model.name }} objects
+        """
+        return self._request('GET', f'/api/v1/{{ model.name.lower() }}', params=params)
+    
+    def get_{{ model.name.lower() }}(self, {{ model.name.lower() }}_id: str) -> Dict[str, Any]:
+        """Get a {{ model.name.lower() }} by ID.
+        
+        Args:
+            {{ model.name.lower() }}_id: ID of the {{ model.name.lower() }} to retrieve
+            
+        Returns:
+            {{ model.name }} object
+        """
+        return self._request('GET', f'/api/v1/{{ model.name.lower() }}/{ {{ model.name.lower() }}_id }')
+    
+    def create_{{ model.name.lower() }}(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new {{ model.name.lower() }}.
+        
+        Args:
+            data: {{ model.name }} data
+            
+        Returns:
+            Created {{ model.name }} object
+        """
+        return self._request('POST', f'/api/v1/{{ model.name.lower() }}', json=data)
+    
+    def update_{{ model.name.lower() }}(self, {{ model.name.lower() }}_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a {{ model.name.lower() }}.
+        
+        Args:
+            {{ model.name.lower() }}_id: ID of the {{ model.name.lower() }} to update
+            data: Updated {{ model.name.lower() }} data
+            
+        Returns:
+            Updated {{ model.name }} object
+        """
+        return self._request('PUT', f'/api/v1/{{ model.name.lower() }}/{ {{ model.name.lower() }}_id }', json=data)
+    
+    def delete_{{ model.name.lower() }}(self, {{ model.name.lower() }}_id: str) -> None:
+        """Delete a {{ model.name.lower() }}.
+        
+        Args:
+            {{ model.name.lower() }}_id: ID of the {{ model.name.lower() }} to delete
+        """
+        self._request('DELETE', f'/api/v1/{{ model.name.lower() }}/{ {{ model.name.lower() }}_id }')
+    
+    {% endfor %}
+    
+    # Health check
+    def health_check(self) -> Dict[str, str]:
+        """Check the health of the API.
+        
+        Returns:
+            Health status
+        """
+        return self._request('GET', '/health')
+    
+    def close(self):
+        """Close the underlying requests session."""
+        self.session.close()
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+
+# Example usage
+if __name__ == "__main__":
+    # Example: Using the client
+    with {{ project_name|title }}Client() as client:
+        # List all items
+        items = client.list_items()
+        print(f"Found {len(items)} items")
+        
+        # Create a new item
+        new_item = client.create_item({"name": "Example Item", "description": "Created via Python client"})
+        print(f"Created item: {new_item}")
+        
+        # Get the created item
+        item_id = new_item["id"]
+        item = client.get_item(item_id)
+        print(f"Retrieved item: {item}")
+        
+        # Update the item
+        updated_item = client.update_item(item_id, {"description": "Updated via Python client"})
+        print(f"Updated item: {updated_item}")
+        
+        # Delete the item
+        client.delete_item(item_id)
+        print(f"Deleted item with ID: {item_id}")

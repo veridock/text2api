@@ -1,0 +1,222 @@
+/**
+ * Auto-generated TypeScript client for {{ project_name }} API
+ */
+
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+
+/**
+ * Configuration for the API client
+ */
+export interface {{ project_name|title }}ClientConfig {
+  baseURL?: string;
+  apiKey?: string;
+  timeout?: number;
+  headers?: Record<string, string>;
+}
+
+/**
+ * Base model interface
+ */
+export interface BaseModel {
+  id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+{% for model in models %}
+/**
+ * {{ model.name }} model
+ */
+export interface {{ model.name }} extends BaseModel {
+  {% for field in model.fields %}
+  {% if field.name not in ['id', 'created_at', 'updated_at'] %}
+  {{ field.name }}{% if not field.required %}?{% endif %}: {{ field.type if field.type else 'string' }};
+  {% endif %}
+  {% endfor %}
+}
+
+/**
+ * Create {{ model.name }} DTO
+ */
+export interface Create{{ model.name }}Dto {
+  {% for field in model.fields %}
+  {% if field.name not in ['id', 'created_at', 'updated_at'] %}
+  {{ field.name }}{% if not field.required %}?{% endif %}: {{ field.type if field.type else 'string' }};
+  {% endif %}
+  {% endfor %}
+}
+
+/**
+ * Update {{ model.name }} DTO
+ */
+export type Update{{ model.name }}Dto = Partial<Create{{ model.name }}Dto>;
+
+/**
+ * Paginated response for {{ model.name }}
+ */
+export interface {{ model.name }}PaginatedResponse {
+  data: {{ model.name }}[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+{% endfor %}
+
+/**
+ * Client for interacting with the {{ project_name }} API
+ */
+export class {{ project_name|title }}Client {
+  private client: AxiosInstance;
+
+  /**
+   * Create a new API client
+   * @param config Client configuration
+   */
+  constructor(config: {{ project_name|title }}ClientConfig = {}) {
+    this.client = axios.create({
+      baseURL: config.baseURL || 'http://localhost:8000',
+      timeout: config.timeout || 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` }),
+        ...config.headers,
+      },
+    });
+  }
+
+  /**
+   * Make an HTTP request to the API
+   * @param config Axios request configuration
+   * @returns Promise with the response data
+   */
+  private async request<T = any>(config: AxiosRequestConfig): Promise<T> {
+    try {
+      const response: AxiosResponse<T> = await this.client.request<T>(config);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        // Handle Axios errors
+        const message = error.response?.data?.message || error.message;
+        throw new Error(`API Error: ${message}`);
+      }
+      throw error;
+    }
+  }
+
+  // Health Check
+  async healthCheck(): Promise<{ status: string }> {
+    return this.request({ method: 'GET', url: '/health' });
+  }
+
+  {% for model in models %}
+  // {{ model.name }} API Methods
+  
+  /**
+   * List all {{ model.name }} items with pagination
+   * @param params Query parameters (page, limit, etc.)
+   */
+  async list{{ model.name }}s(params?: {
+    page?: number;
+    limit?: number;
+    [key: string]: any;
+  }): Promise<{{ model.name }}PaginatedResponse> {
+    return this.request<{{ model.name }}PaginatedResponse>({
+      method: 'GET',
+      url: '/api/v1/{{ model.name.lower() }}',
+      params,
+    });
+  }
+
+  /**
+   * Get a single {{ model.name }} by ID
+   * @param id {{ model.name }} ID
+   */
+  async get{{ model.name }}(id: string): Promise<{{ model.name }}> {
+    return this.request<{{ model.name }}>({
+      method: 'GET',
+      url: `/api/v1/{{ model.name.lower() }}/${id}`,
+    });
+  }
+
+  /**
+   * Create a new {{ model.name }}
+   * @param data {{ model.name }} data
+   */
+  async create{{ model.name }}(data: Create{{ model.name }}Dto): Promise<{{ model.name }}> {
+    return this.request<{{ model.name }}>({
+      method: 'POST',
+      url: '/api/v1/{{ model.name.lower() }}',
+      data,
+    });
+  }
+
+  /**
+   * Update an existing {{ model.name }}
+   * @param id {{ model.name }} ID
+   * @param data Updated {{ model.name }} data
+   */
+  async update{{ model.name }}(id: string, data: Update{{ model.name }}Dto): Promise<{{ model.name }}> {
+    return this.request<{{ model.name }}>({
+      method: 'PUT',
+      url: `/api/v1/{{ model.name.toLowerCase() }}/${id}`,
+      data,
+    });
+  }
+
+  /**
+   * Delete a {{ model.name }}
+   * @param id {{ model.name }} ID
+   */
+  async delete{{ model.name }}(id: string): Promise<void> {
+    await this.request({
+      method: 'DELETE',
+      url: `/api/v1/{{ model.name.toLowerCase() }}/${id}`,
+    });
+  }
+  {% endfor %n}
+}
+
+// Example usage
+if (require.main === module) {
+  (async () => {
+    const client = new {{ project_name|title }}Client({
+      baseURL: 'http://localhost:8000',
+    });
+
+    try {
+      // Check API health
+      const health = await client.healthCheck();
+      console.log('API Health:', health);
+
+      // Example: List items
+      const items = await client.listItems();
+      console.log('Items:', items);
+
+      // Example: Create a new item
+      const newItem = await client.createItem({
+        name: 'Test Item',
+        description: 'Created via TypeScript client',
+      });
+      console.log('Created item:', newItem);
+
+      // Example: Get the created item
+      const item = await client.getItem(newItem.id);
+      console.log('Retrieved item:', item);
+
+      // Example: Update the item
+      const updatedItem = await client.updateItem(item.id, {
+        description: 'Updated via TypeScript client',
+      });
+      console.log('Updated item:', updatedItem);
+
+      // Example: Delete the item
+      await client.deleteItem(updatedItem.id);
+      console.log('Item deleted');
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  })();
+}

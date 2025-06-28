@@ -1,13 +1,11 @@
 """Unit tests for the text2api CLI."""
 
-import pytest
-import sys
-from unittest import mock
-from click.testing import CliRunner
-from text2api import cli as cli_module
+from unittest import mock  # noqa: F401
 
-# Alias for the main function to test
-cli_main = cli_module.main
+from click.testing import CliRunner
+
+from text2api.cli import main as cli_main
+
 
 def test_cli_help():
     """Test the CLI help output."""
@@ -15,39 +13,82 @@ def test_cli_help():
     result = runner.invoke(cli_main, ["--help"])
     assert result.exit_code == 0
     assert "Show this message and exit." in result.output
-    assert "generate" in result.output  # Make sure subcommands are listed
-    assert '--help' in result.output
+    assert "generate" in result.output
+
 
 def test_cli_version():
-    """Test the CLI version command."""
+    """Test the CLI version output."""
     runner = CliRunner()
-    result = runner.invoke(cli_main, ['--version'])
-    # The version command exits with 0 on success, but the output might be empty
-    # Just check that it doesn't fail
+    result = runner.invoke(cli_main, ["--version"])
     assert result.exit_code == 0
+    assert "version 0.1.2" in result.output
 
-@pytest.mark.parametrize(
-    "command, expected_output",
-    [
-        ("test", "Generowanie API dla: test"),
-    ],
-)
-def test_generate_command(command, expected_output, mocker):
-    """Test the generate command with different inputs."""
+
+def test_generate_command_basic(mocker):
+    """Test the generate command with a basic input."""
+    mock_generator = mocker.MagicMock()
+    mock_generator.generate.return_value = "Test output"
+
+    # Patch the CLIGenerator class
+    with mocker.patch('text2api.cli.CLIGenerator', return_value=mock_generator):
+        runner = CliRunner()
+        result = runner.invoke(cli_main, ["generate", "test_spec"])
+        
+        assert result.exit_code == 0
+        assert "Test output" in result.output
+        mock_generator.generate.assert_called_once_with("test_spec")
+
+
+def test_generate_command_with_debug(mocker, monkeypatch):
+    """Test the generate command with debug output."""
     # Create a mock for the CLIGenerator class
     mock_generator = mocker.MagicMock()
-    mock_generator.generate.return_value = f"Successfully generated CLI for: {command}"
+    mock_generator.generate.return_value = "Test output"
     
-    # Patch the CLIGenerator class where it's used in the cli module
-    with mocker.patch('text2api.cli.CLIGenerator', return_value=mock_generator) as mock_cls:
+    echo_calls = []
+
+    def mock_echo(message, **kwargs):
+        echo_calls.append((message, kwargs.get('err', False)))
+
+    # Patch the CLIGenerator class and the click.echo function
+    with mocker.patch('text2api.cli.CLIGenerator', 
+                     return_value=mock_generator):
+        # Replace click.echo with our mock
+        monkeypatch.setattr('click.echo', mock_echo)
+        
         # Run the CLI command with debug flag
         runner = CliRunner()
-        result = runner.invoke(cli_main, ["generate", command, "--debug"])
+        result = runner.invoke(
+            cli_main,
+            ["generate", "test_spec", "--debug"]
+        )
+
+        # Check the command executed successfully
+        assert result.exit_code == 0
         
-        # Verify the results
-        assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}"
-        assert expected_output.lower() in result.output.lower(), \
-            f"Expected '{expected_output}' in output, got: {result.output}"
+        # Convert the echo calls to a set of (message, is_error) tuples
+        echo_messages = set()
+        for call in echo_calls:
+            if len(call) == 2 and isinstance(call, tuple):
+                message, is_error = call
+                echo_messages.add((message, is_error))
+
+        # Check that debug messages were printed (order independent)
+        expected_messages = {
+            ("DEBUG: Starting generate command", True),
+            ("DEBUG: spec = 'test_spec'", True),
+            ("DEBUG: Creating CLIGenerator instance", True),
+            ("DEBUG: Calling generator.generate()", True),
+            ("DEBUG: generator.generate() returned: 'Test output'", True),
+            ("Generowanie API dla: test_spec", False),
+            ("Test output", False)
+        }
         
-        # Verify the generate method was called with the correct argument
-        mock_generator.generate.assert_called_once_with(command)
+        # Check that all expected messages are in the actual calls
+        for expected in expected_messages:
+            assert expected in echo_messages, (
+                f"Expected message not found: {expected}"
+            )
+        
+        # Check that the generator was called
+        mock_generator.generate.assert_called_once_with("test_spec")

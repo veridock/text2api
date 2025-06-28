@@ -1,0 +1,97 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from pydantic import BaseModel
+from datetime import datetime
+from uuid import UUID, uuid4
+
+router = APIRouter()
+
+# Mock database
+{{ model.name.lower() }}_db = {}
+
+# Pydantic models
+class {{ model.name }}Base(BaseModel):
+    """Base model for {{ model.name }} with common fields."""
+    {% for field in model.fields %}
+    {% if field.name != 'id' %}
+    {{ field.name }}: {{ field.type if field.type else 'str' }}
+    {% endif %}
+    {% endfor %}
+
+class {{ model.name }}Create({{ model.name }}Base):
+    """Model for creating a new {{ model.name }}."""
+    pass
+
+class {{ model.name }}({{ model.name }}Base):
+    """Complete {{ model.name }} model with ID and timestamps."""
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+# Helper functions
+def get_{{ model.name.lower() }}({{ model.name.lower() }}_id: str) -> Optional[dict]:
+    """Retrieve a {{ model.name.lower() }} by ID."""
+    return {{ model.name.lower() }}_db.get({{ model.name.lower() }}_id)
+
+# API Endpoints
+@router.get("/{{ model.name.lower() }}", response_model=List[{{ model.name }}])
+async def list_{{ model.name.lower() }}s(skip: int = 0, limit: int = 10):
+    """List all {{ model.name.lower() }}s with pagination."""
+    return list({{ model.name.lower() }}_db.values())[skip:skip + limit]
+
+@router.post("/{{ model.name.lower() }}", response_model={{ model.name }}, status_code=status.HTTP_201_CREATED)
+async def create_{{ model.name.lower() }}({{ model.name.lower() }}: {{ model.name }}Create):
+    """Create a new {{ model.name.lower() }}."""
+    {{ model.name.lower() }}_id = str(uuid4())
+    now = datetime.utcnow()
+    db_{{ model.name.lower() }} = {
+        "id": {{ model.name.lower() }}_id,
+        **{{ model.name.lower() }}.dict(),
+        "created_at": now,
+        "updated_at": now,
+    }
+    {{ model.name.lower() }}_db[{{ model.name.lower() }}_id] = db_{{ model.name.lower() }}
+    return db_{{ model.name.lower() }}
+
+@router.get("/{{ model.name.lower() }}/{{{ model.name.lower() }}_id}", response_model={{ model.name }})
+async def get_{{ model.name.lower() }}({{ model.name.lower() }}_id: str):
+    """Get a {{ model.name.lower() }} by ID."""
+    {{ model.name.lower() }} = get_{{ model.name.lower() }}({{ model.name.lower() }}_id)
+    if not {{ model.name.lower() }}:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ model.name }} not found with id { {{ model.name.lower() }}_id }}"
+        )
+    return {{ model.name.lower() }}
+
+@router.put("/{{ model.name.lower() }}/{{{ model.name.lower() }}_id}", response_model={{ model.name }})
+async def update_{{ model.name.lower() }}({{ model.name.lower() }}_id: str, {{ model.name.lower() }}_update: {{ model.name }}Base):
+    """Update a {{ model.name.lower() }} by ID."""
+    existing_{{ model.name.lower() }} = get_{{ model.name.lower() }}({{ model.name.lower() }}_id)
+    if not existing_{{ model.name.lower() }}:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ model.name }} not found with id { {{ model.name.lower() }}_id }}"
+        )
+    
+    updated_{{ model.name.lower() }} = {
+        **existing_{{ model.name.lower() }},
+        **{{ model.name.lower() }}_update.dict(exclude_unset=True),
+        "updated_at": datetime.utcnow(),
+    }
+    {{ model.name.lower() }}_db[{{ model.name.lower() }}_id] = updated_{{ model.name.lower() }}
+    return updated_{{ model.name.lower() }}
+
+@router.delete("/{{ model.name.lower() }}/{{{ model.name.lower() }}_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_{{ model.name.lower() }}({{ model.name.lower() }}_id: str):
+    """Delete a {{ model.name.lower() }} by ID."""
+    if {{ model.name.lower() }}_id not in {{ model.name.lower() }}_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ model.name }} not found with id { {{ model.name.lower() }}_id }}"
+        )
+    del {{ model.name.lower() }}_db[{{ model.name.lower() }}_id]
+    return None

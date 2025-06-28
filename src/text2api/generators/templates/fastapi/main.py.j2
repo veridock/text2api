@@ -1,0 +1,54 @@
+import uvicorn
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.staticfiles import StaticFiles
+
+from app.api.v1 import api_router
+from app.core.config import settings
+
+app = FastAPI(
+    title="{{ project_name.replace('_', ' ').title() }}",
+    description="Auto-generated FastAPI server",
+    version="1.0.0",
+    docs_url=None,  # Disable default docs
+    redoc_url=None,  # Disable default redoc
+)
+
+# Set up CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files for Swagger UI
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# Include API router
+app.include_router(api_router, prefix="/api/v1")
+
+# Custom Swagger UI
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="{{ project_name.replace('_', ' ').title() }} - Swagger UI",
+        swagger_js_url="/static/swagger-ui-bundle.js",
+        swagger_css_url="/static/swagger-ui.css",
+    )
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "app.main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+    )

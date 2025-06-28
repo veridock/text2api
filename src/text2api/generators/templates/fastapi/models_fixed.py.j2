@@ -1,0 +1,130 @@
+"""SQLAlchemy models and Pydantic schemas."""
+from datetime import datetime
+from typing import List, Optional, Dict, Any, Union
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, Field, HttpUrl
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text, Float
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+
+Base = declarative_base()
+
+# Type mapping from API spec types to Python types
+TYPE_MAPPING = {
+    'str': 'str',
+    'int': 'int',
+    'float': 'float',
+    'bool': 'bool',
+    'datetime': 'datetime',
+    'date': 'date',
+    'time': 'time',
+    'json': 'Dict[str, Any]',
+    'list': 'List[Any]',
+    'url': 'HttpUrl',
+}
+
+# Default SQLAlchemy column types for each field type
+DB_TYPE_MAPPING = {
+    'str': 'String',
+    'int': 'Integer',
+    'float': 'Float',
+    'bool': 'Boolean',
+    'datetime': 'DateTime',
+    'date': 'Date',
+    'time': 'Time',
+    'json': 'JSONB',
+    'list': 'JSONB',
+    'url': 'String',
+}
+
+# Pydantic models (schemas)
+{% for model in models %}
+class {{ model.name }}Base(BaseModel):
+    """Base model for {{ model.name }} with common fields."""
+    {% for field in model.fields %}
+    {%- if field.name not in ['id', 'created_at', 'updated_at'] -%}
+    {{ field.name }}: {{ TYPE_MAPPING.get(field.type, 'str') }}{% if not field.required %} | None{% endif %}{% if 'default' in field %} = {{ field.default|tojson }}{% endif %}
+    {%- endif -%}
+    {% endfor %}
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
+
+
+class {{ model.name }}Create({{ model.name }}Base):
+    """Model for creating a new {{ model.name }}."""
+    pass
+
+
+class {{ model.name }}Update(BaseModel):
+    """Model for updating a {{ model name }}."""
+    {% for field in model.fields %}
+    {%- if field.name not in ['id', 'created_at', 'updated_at'] -%}
+    {{ field.name }}: {{ TYPE_MAPPING.get(field.type, 'str') }} | None = None
+    {%- endif -%}
+    {% endfor %}
+
+
+class {{ model.name }}({{ model.name }}Base):
+    """Complete {{ model.name }} model with ID and timestamps."""
+    id: UUID = Field(default_factory=uuid4)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
+
+
+# SQLAlchemy models
+class DB{{ model.name }}(Base):
+    """Database model for {{ model.name }}."""
+    __tablename__ = "{{ model.name.lower() }}"
+    
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True, default=uuid4)
+    {% for field in model.fields %}
+    {%- if field.name not in ['id', 'created_at', 'updated_at'] %}
+    {%- set db_type = DB_TYPE_MAPPING.get(field.type, 'String') %}
+    {%- set column_args = [db_type] %}
+    {%- if field.required %}
+    {%- set column_args = column_args + ['nullable=False'] %}
+    {%- endif %}
+    {%- if field.unique %}
+    {%- set column_args = column_args + ['unique=True'] %}
+    {%- endif %}
+    {%- if field.index %}
+    {%- set column_args = column_args + ['index=True'] %}
+    {%- endif %}
+    {{ field.name }} = Column({{ column_args|join(', ') }})
+    {% endif %}
+    {% endfor %}
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert model to dictionary."""
+        result = {
+            "id": str(self.id),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+        
+        # Add model fields
+        {% for field in model.fields %}
+        {%- if field.name not in ['id', 'created_at', 'updated_at'] %}
+        result["{{ field.name }}"] = self.{{ field.name }}
+        {%- endif %}
+        {% endfor %}
+        
+        return result
+    
+    def update(self, data: dict) -> None:
+        """Update model fields from a dictionary."""
+        for key, value in data.items():
+            if hasattr(self, key) and value is not None:
+                setattr(self, key, value)
+
+{% endfor %}
