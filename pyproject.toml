@@ -4,7 +4,7 @@ version = "0.1.5"
 description = "Automatyczne generowanie API na podstawie opisu tekstowego z wykorzystaniem NLP i Ollama"
 authors = ["Tom Sapletta <info@softreck.dev>"]
 readme = "README.md"
-packages = [{include = "text2api", from = "."}]
+packages = [{include = "text2api", from = "src"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
