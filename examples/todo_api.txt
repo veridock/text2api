@@ -1,0 +1,31 @@
+A simple todo list API with the following features:
+
+- Endpoint: /todos
+  - GET: List all todos
+  - POST: Create a new todo
+
+- Endpoint: /todos/{id}
+  - GET: Get a specific todo
+  - PUT: Update a todo
+  - DELETE: Delete a todo
+
+Todo model:
+- id: integer (auto-increment)
+- title: string (required)
+- description: string (optional)
+- completed: boolean (default: false)
+- created_at: datetime (auto-generated)
+- updated_at: datetime (auto-updated)
+
+Database: SQLite for simplicity
+Authentication: None (for this example)
+
+Example todo:
+{
+  "id": 1,
+  "title": "Buy groceries",
+  "description": "Milk, eggs, bread",
+  "completed": false,
+  "created_at": "2025-06-28T10:30:00Z",
+  "updated_at": "2025-06-28T10:30:00Z"
+}

@@ -56,7 +56,7 @@ async def create_{{ model.name.lower() }}({{ model.name.lower() }}: {{ model.nam
     {{ model.name.lower() }}_db[{{ model.name.lower() }}_id] = db_{{ model.name.lower() }}
     return db_{{ model.name.lower() }}
 
-@router.get("/{{ model.name.lower() }}/{{{ model.name.lower() }}_id}", response_model={{ model.name }})
+@router.get("/{{ model.name.lower() }}/{{ '{{' }}{{ model.name.lower() }}_id{{ '}}' }}", response_model={{ model.name }})
 async def get_{{ model.name.lower() }}({{ model.name.lower() }}_id: str):
     """Get a {{ model.name.lower() }} by ID."""
     {{ model.name.lower() }} = get_{{ model.name.lower() }}({{ model.name.lower() }}_id)
@@ -67,7 +67,7 @@ async def get_{{ model.name.lower() }}({{ model.name.lower() }}_id: str):
         )
     return {{ model.name.lower() }}
 
-@router.put("/{{ model.name.lower() }}/{{{ model.name.lower() }}_id}", response_model={{ model.name }})
+@router.put("/{{ model.name.lower() }}/{{ '{{' }}{{ model.name.lower() }}_id{{ '}}' }}", response_model={{ model.name }})
 async def update_{{ model.name.lower() }}({{ model.name.lower() }}_id: str, {{ model.name.lower() }}_update: {{ model.name }}Base):
     """Update a {{ model.name.lower() }} by ID."""
     existing_{{ model.name.lower() }} = get_{{ model.name.lower() }}({{ model.name.lower() }}_id)
@@ -85,7 +85,7 @@ async def update_{{ model.name.lower() }}({{ model.name.lower() }}_id: str, {{ m
     {{ model.name.lower() }}_db[{{ model.name.lower() }}_id] = updated_{{ model.name.lower() }}
     return updated_{{ model.name.lower() }}
 
-@router.delete("/{{ model.name.lower() }}/{{{ model.name.lower() }}_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{{ model.name.lower() }}/{{ '{{' }}{{ model.name.lower() }}_id{{ '}}' }}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_{{ model.name.lower() }}({{ model.name.lower() }}_id: str):
     """Delete a {{ model.name.lower() }} by ID."""
     if {{ model.name.lower() }}_id not in {{ model.name.lower() }}_db:

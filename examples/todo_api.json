@@ -1,0 +1,101 @@
+{
+  "name": "Todo API",
+  "description": "A simple todo API with CRUD operations",
+  "models": [
+    {
+      "name": "Todo",
+      "fields": [
+        {"name": "id", "type": "str", "required": true},
+        {"name": "title", "type": "str", "required": true},
+        {"name": "description", "type": "str", "required": false},
+        {"name": "completed", "type": "bool", "required": false, "default": false},
+        {"name": "created_at", "type": "datetime", "required": true},
+        {"name": "updated_at", "type": "datetime", "required": true}
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/todos",
+      "description": "List all todos",
+      "responses": {
+        "200": {"description": "List of todos"}
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/todos",
+      "description": "Create a new todo",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Todo"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {"description": "Todo created successfully"}
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/todos/{todo_id}",
+      "description": "Get a specific todo by ID",
+      "parameters": [
+        {
+          "name": "todo_id",
+          "in": "path",
+          "required": true,
+          "schema": {"type": "string"}
+        }
+      ],
+      "responses": {
+        "200": {"description": "Todo details"}
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/todos/{todo_id}",
+      "description": "Update a todo",
+      "parameters": [
+        {
+          "name": "todo_id",
+          "in": "path",
+          "required": true,
+          "schema": {"type": "string"}
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Todo"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {"description": "Todo updated successfully"}
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/todos/{todo_id}",
+      "description": "Delete a todo",
+      "parameters": [
+        {
+          "name": "todo_id",
+          "in": "path",
+          "required": true,
+          "schema": {"type": "string"}
+        }
+      ],
+      "responses": {
+        "204": {"description": "Todo deleted successfully"}
+      }
+    }
+  ]
+}

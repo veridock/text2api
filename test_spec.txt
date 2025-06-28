@@ -1,0 +1,7 @@
+A simple blog API with the following features:
+- Users can create, read, update, and delete blog posts
+- Each post has a title, content, author, and publication date
+- Posts can have multiple comments
+- Each comment has content, author, and timestamp
+- Users can like posts
+- Posts can be filtered by category or author

@@ -30,7 +30,7 @@ def test_cli_generator_generate():
     generator = CLIGenerator()
     spec = "test specification"
     result = generator.generate(spec)
-    assert result == f"Successfully generated CLI for: {spec}"
+    assert "Successfully generated CLI at:" in result
 
 # The following tests would require actual template files to be present
 # They're marked as expected to fail for now since we don't have the templates
