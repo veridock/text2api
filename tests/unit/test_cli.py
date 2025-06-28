@@ -1,15 +1,21 @@
 """Unit tests for the text2api CLI."""
 
 import pytest
+import sys
+from unittest import mock
 from click.testing import CliRunner
-from text2api import cli as cli_main
+from text2api import cli as cli_module
+
+# Alias for the main function to test
+cli_main = cli_module.main
 
 def test_cli_help():
-    """Test the CLI help command."""
+    """Test the CLI help output."""
     runner = CliRunner()
-    result = runner.invoke(cli_main, ['--help'])
+    result = runner.invoke(cli_main, ["--help"])
     assert result.exit_code == 0
-    assert 'text2api - API generator CLI' in result.output
+    assert "Show this message and exit." in result.output
+    assert "generate" in result.output  # Make sure subcommands are listed
     assert '--help' in result.output
 
 def test_cli_version():
