@@ -108,41 +108,140 @@ def list_generators(ctx, output_format):
         click.echo("\nUse 'text2api generate <generator> --help' for more info on a specific generator.")
 
 
+# Template metadata with descriptions and parameters
+TEMPLATE_METADATA = {
+    'fastapi': {
+        'Dockerfile.j2': {
+            'description': 'Dockerfile for containerizing the FastAPI application',
+            'parameters': {
+                'python_version': 'Python version to use in the container',
+                'port': 'Port to expose in the container (default: 8000)'
+            }
+        },
+        'main.py.j2': {
+            'description': 'Main FastAPI application file with API routes and middleware',
+            'parameters': {
+                'app_name': 'Name of the FastAPI application',
+                'version': 'API version (default: 1.0.0)'
+            }
+        },
+        'models.py.j2': {
+            'description': 'SQLAlchemy models for the database',
+            'parameters': {
+                'models': 'List of model definitions',
+                'db_url': 'Database connection URL (default: sqlite:///./sql_app.db)'
+            }
+        },
+        'router.py.j2': {
+            'description': 'API route handlers for CRUD operations',
+            'parameters': {
+                'model_name': 'Name of the model this router handles',
+                'prefix': 'URL prefix for the routes (default: /api/v1/)',
+                'tags': 'OpenAPI tags for the routes'
+            }
+        }
+    },
+    'client': {
+        'typescript/client.ts.j2': {
+            'description': 'TypeScript API client with type definitions',
+            'parameters': {
+                'project_name': 'Name of the project',
+                'models': 'List of API model definitions'
+            }
+        }
+    },
+    'openapi': {
+        'openapi.yaml.j2': {
+            'description': 'OpenAPI specification in YAML format',
+            'parameters': {
+                'title': 'API title',
+                'version': 'API version (default: 1.0.0)',
+                'description': 'Detailed API description'
+            }
+        }
+    }
+}
+
+def _format_template_info(template_name, template_info, output_format='text'):
+    """Format template information for display."""
+    if output_format == 'text':
+        output = [f"  {template_name}:"]
+        output.append(f"    Description: {template_info.get('description', 'No description available')}")
+        
+        if 'parameters' in template_info and template_info['parameters']:
+            output.append("    Parameters:")
+            for param, desc in template_info['parameters'].items():
+                output.append(f"      - {param}: {desc}")
+        else:
+            output.append("    No parameters defined.")
+            
+        return '\n'.join(output)
+    else:
+        return {
+            template_name: {
+                'description': template_info.get('description', ''),
+                'parameters': template_info.get('parameters', {})
+            }
+        }
+
 @list_cmd.command('templates')
 @click.argument('generator', required=False)
 @click.option('--format', '-f', 'output_format', 
               type=click.Choice(['text', 'json', 'yaml'], case_sensitive=False),
               default='text', help='Output format (default: text)')
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed information about each template')
 @click.pass_context
-def list_templates(ctx, generator, output_format):
+def list_templates(ctx, generator, output_format, verbose):
     """List available templates for generators.
     
     If no generator is specified, lists all available templates across all generators.
+    Use --verbose to see detailed information about each template.
     """
-    import os
     from pathlib import Path
     
     # Get the directory where the templates are stored
     templates_dir = Path(__file__).parent / 'generators' / 'templates'
     
     if generator:
+        generator = generator.lower()
         # List templates for a specific generator
-        gen_templates_dir = templates_dir / generator.lower()
+        gen_templates_dir = templates_dir / generator
         if gen_templates_dir.exists() and gen_templates_dir.is_dir():
-            templates = [str(f.relative_to(gen_templates_dir)) 
-                       for f in sorted(gen_templates_dir.glob('*.j2'))]
+            # Get all .j2 files, including in subdirectories
+            template_files = []
+            for ext in ('*.j2', '*/*.j2'):
+                template_files.extend(gen_templates_dir.glob(ext))
+                
+            templates = [str(f.relative_to(gen_templates_dir).as_posix()) 
+                       for f in sorted(template_files)]
             
             if output_format in ('json', 'yaml'):
                 data = {
                     'generator': generator,
-                    'templates': templates
+                    'templates': {}
                 }
+                
+                for tpl in templates:
+                    tpl_info = TEMPLATE_METADATA.get(generator, {}).get(tpl, {})
+                    data['templates'][tpl] = {
+                        'description': tpl_info.get('description', 'No description available'),
+                        'parameters': tpl_info.get('parameters', {})
+                    }
+                
                 click.echo(_format_output(data, output_format))
             else:
                 click.echo(f"Templates for {generator}:")
                 click.echo("-" * 50)
-                for tpl in templates:
-                    click.echo(f"  {tpl}")
+                
+                if verbose:
+                    for tpl in templates:
+                        tpl_info = TEMPLATE_METADATA.get(generator, {}).get(tpl, {})
+                        click.echo(_format_template_info(tpl, tpl_info, 'text'))
+                        click.echo()
+                else:
+                    for tpl in templates:
+                        click.echo(f"  {tpl}")
+                    click.echo("\nUse --verbose for detailed information about each template.")
         else:
             available = [d.name for d in templates_dir.iterdir() if d.is_dir()]
             if output_format in ('json', 'yaml'):
@@ -153,30 +252,53 @@ def list_templates(ctx, generator, output_format):
                 click.echo(_format_output(data, output_format), err=True)
             else:
                 click.echo(f"No templates found for generator: {generator}", err=True)
-                click.echo(f"Available generators with templates: {available}")
+                click.echo(f"Available generators with templates: {', '.join(available)}")
     else:
         # List all templates across all generators
         all_templates = {}
         for gen_dir in sorted(templates_dir.iterdir()):
             if gen_dir.is_dir():
-                templates = [str(f.relative_to(gen_dir)) 
-                           for f in sorted(gen_dir.glob('*.j2'))]
+                # Get all .j2 files, including in subdirectories
+                template_files = []
+                for ext in ('*.j2', '*/*.j2'):
+                    template_files.extend(gen_dir.glob(ext))
+                
+                templates = [str(f.relative_to(gen_dir).as_posix()) 
+                           for f in sorted(template_files)]
                 if templates:
                     all_templates[gen_dir.name] = templates
         
         if output_format in ('json', 'yaml'):
-            click.echo(_format_output(all_templates, output_format))
+            data = {}
+            for gen_name, templates in all_templates.items():
+                data[gen_name] = {}
+                for tpl in templates:
+                    tpl_info = TEMPLATE_METADATA.get(gen_name, {}).get(tpl, {})
+                    data[gen_name][tpl] = {
+                        'description': tpl_info.get('description', 'No description available'),
+                        'parameters': tpl_info.get('parameters', {})
+                    }
+            click.echo(_format_output(data, output_format))
         else:
             click.echo("Available templates by generator:")
             click.echo("-" * 50)
             
             for gen_name, templates in all_templates.items():
                 click.echo(f"\n{gen_name}:")
-                for tpl in templates:
-                    click.echo(f"  {tpl}")
+                if verbose:
+                    for tpl in templates:
+                        tpl_info = TEMPLATE_METADATA.get(gen_name, {}).get(tpl, {})
+                        click.echo(_format_template_info(tpl, tpl_info, 'text'))
+                        click.echo()
+                else:
+                    for tpl in templates:
+                        click.echo(f"  {tpl}")
+            
+            if not verbose:
+                click.echo("\nUse --verbose for detailed information about each template.")
     
-    if output_format == 'text':
-        click.echo("\nUse 'text2api list templates <generator>' to see templates for a specific generator.")
+    if output_format == 'text' and not verbose:
+        click.echo("\nUse 'text2api list templates <generator> --verbose' to see detailed information about each template.")
 
 
 
