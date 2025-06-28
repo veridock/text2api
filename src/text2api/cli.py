@@ -32,6 +32,511 @@ def version():
     click.echo(f"text2api version {__version__}")
 
 
+@main.command()
+@click.argument('spec', required=False)
+@click.option('--file', '-f', 'spec_file',
+              type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+              help='Path to a file containing the API specification')
+@click.option('--format', '-o', 'output_format',
+              type=click.Choice(['text', 'json', 'yaml'], case_sensitive=False),
+              default='text', help='Output format (default: text)')
+@click.pass_context
+def validate(ctx, spec, spec_file, output_format):
+    """Validate an API specification.
+    
+    The specification can be provided directly as an argument or via a file.
+    """
+    from text2api.nlp.spec_extractor import extract_spec
+    import json
+    from pathlib import Path
+    
+    if not spec and not spec_file:
+        click.echo("Error: No specification provided. Use --file or provide the spec as an argument.", err=True)
+        ctx.exit(1)
+    
+    # Read the spec from file if provided, otherwise use the direct input
+    spec_text = Path(spec_file).read_text(encoding='utf-8') if spec_file else spec
+    
+    try:
+        # Use the existing spec extraction to validate
+        api_spec = extract_spec(spec_text)
+        
+        # Basic validation results
+        validation_result = {
+            'valid': True,
+            'spec': api_spec,
+            'warnings': [],
+            'errors': []
+        }
+        
+        # Check for common issues
+        if not api_spec.get('models') or not isinstance(api_spec.get('models'), list):
+            validation_result['warnings'].append('No models defined in the specification')
+        else:
+            for model in api_spec['models']:
+                if not model.get('name'):
+                    validation_result['errors'].append('Model is missing a name')
+                if not model.get('fields') or not isinstance(model.get('fields'), list):
+                    validation_result['warnings'].append(f"Model '{model.get('name', 'unnamed')}' has no fields defined")
+        
+        # Update valid status if there are errors
+        if validation_result['errors']:
+            validation_result['valid'] = False
+        
+        # Format the output
+        if output_format in ('json', 'yaml'):
+            click.echo(_format_output(validation_result, output_format))
+        else:
+            click.echo("\n" + "=" * 50)
+            click.echo("API SPECIFICATION VALIDATION REPORT")
+            click.echo("=" * 50)
+            
+            if validation_result['valid']:
+                click.secho("✓ Specification is valid!", fg='green', bold=True)
+            else:
+                click.secho("✗ Specification has errors:", fg='red', bold=True)
+                for error in validation_result['errors']:
+                    click.echo(f"  - {error}")
+            
+            if validation_result['warnings']:
+                click.echo("\nWarnings:")
+                for warning in validation_result['warnings']:
+                    click.echo(f"  ⚠ {warning}")
+            
+            click.echo("\nSpecification Summary:")
+            click.echo(f"  Models: {len(api_spec.get('models', []))}")
+            
+            model_names = [m.get('name', 'unnamed') for m in api_spec.get('models', [])]
+            if model_names:
+                click.echo("  Model names: " + ", ".join(model_names))
+            
+            click.echo("\nUse --format json or --format yaml for machine-readable output.")
+        
+        # Exit with appropriate status code
+        exit_code = 0 if validation_result['valid'] else 1
+        if exit_code != 0:
+            ctx.exit(exit_code)
+        
+    except Exception as e:
+        error_msg = f"Error validating specification: {str(e)}"
+        if output_format in ('json', 'yaml'):
+            click.echo(_format_output({
+                'valid': False,
+                'error': error_msg,
+                'details': str(e)
+            }, output_format), err=True)
+        else:
+            click.secho(error_msg, fg='red', err=True)
+        ctx.exit(1)
+
+
+@main.command()
+@click.argument('topic', required=False, default='readme')
+@click.option('--format', '-f', 'output_format',
+              type=click.Choice(['text', 'markdown', 'html'], case_sensitive=False),
+              default='text', help='Output format (default: text)')
+@click.pass_context
+def docs(ctx, topic, output_format):
+    """Display documentation for text2api.
+    
+    Available topics:
+      - readme: Show the main README (default)
+      - quickstart: Show quick start guide
+      - examples: Show usage examples
+      - generators: Information about available generators
+      - templates: Information about template system
+    """
+    import os
+    from pathlib import Path
+    import textwrap
+    from markdown import markdown
+    from pygments import highlight
+    from pygments.lexers import get_lexer_by_name
+    from pygments.formatters import TerminalFormatter
+    
+    # Documentation content
+    docs_content = {
+        'readme': {
+            'file': 'README.md',
+            'title': 'Text2API - Generate APIs from Text Descriptions'
+        },
+        'quickstart': {
+            'content': """# Quick Start Guide
+
+## Installation
+
+```bash
+pip install text2api
+```
+
+## Basic Usage
+
+1. Generate a FastAPI server:
+   ```bash
+   text2api generate server "A simple blog API with posts and comments"
+   ```
+
+2. Generate a TypeScript client:
+   ```bash
+   text2api generate client "A simple blog API with posts and comments" --language typescript
+   ```
+
+3. Generate an OpenAPI specification:
+   ```bash
+   text2api generate openapi "A simple blog API with posts and comments"
+   ```
+
+4. Validate an API specification:
+   ```bash
+   text2api validate "A simple blog API with posts and comments"
+   ```
+"""
+        },
+        'examples': {
+            'content': """# Usage Examples
+
+## Generate a Todo List API
+
+```bash
+text2api generate server \
+  "A RESTful todo list API with tasks that have title, description, due date, and status" \
+  --output-dir ./todo-api
+```
+
+## Generate an E-commerce API
+
+```bash
+text2api generate server \
+  "An e-commerce API with products, categories, orders, and customers" \
+  --output-dir ./ecommerce-api
+```
+
+## Generate a Weather API Client
+
+```bash
+text2api generate client \
+  "A weather API that returns current conditions and forecasts" \
+  --language typescript \
+  --output-dir ./weather-client
+```
+"""
+        },
+        'generators': {
+            'content': """# Available Generators
+
+text2api comes with several built-in generators:
+
+## Server Generators
+- **fastapi**: Generates a FastAPI server with SQLAlchemy models and CRUD endpoints
+- **flask**: Generates a Flask RESTful API (coming soon)
+
+## Client Generators
+- **typescript**: Generates a TypeScript API client with type definitions
+- **python**: Generates a Python API client (coming soon)
+
+## Documentation Generators
+- **openapi**: Generates an OpenAPI specification document
+- **markdown**: Generates API documentation in Markdown format (coming soon)
+"""
+        },
+        'templates': {
+            'content': """# Template System
+
+text2api uses Jinja2 templates to generate code. You can customize the output by providing your own templates.
+
+## Template Locations
+
+Templates are stored in the following directories:
+
+- FastAPI: `text2api/generators/templates/fastapi/`
+- TypeScript Client: `text2api/generators/templates/client/typescript/`
+- OpenAPI: `text2api/generators/templates/openapi/`
+
+## Custom Templates
+
+To use custom templates, create a directory with the same structure as the built-in templates and specify its path using the `--template-dir` option.
+
+Example:
+```bash
+text2api generate server "My API" --template-dir ./my-templates
+```
+"""
+        }
+    }
+    
+    # Get the content for the requested topic
+    if topic not in docs_content:
+        available_topics = ', '.join(docs_content.keys())
+        click.echo(f"Error: Unknown topic '{topic}'. Available topics: {available_topics}", err=True)
+        ctx.exit(1)
+    
+    content_info = docs_content[topic]
+    content = ''
+    
+    # If content is in a file, read it
+    if 'file' in content_info:
+        try:
+            file_path = Path(__file__).parent.parent.parent / content_info['file']
+            content = file_path.read_text(encoding='utf-8')
+        except Exception as e:
+            click.echo(f"Error reading documentation file: {str(e)}", err=True)
+            ctx.exit(1)
+    else:
+        content = content_info['content']
+    
+    # Format the output
+    if output_format == 'html':
+        html = markdown(content, extensions=['fenced_code', 'tables', 'codehilite'])
+        click.echo(html)
+    elif output_format == 'markdown':
+        click.echo(content)
+    else:  # text
+        # Simple markdown to text conversion
+        lines = content.split('\n')
+        in_code_block = False
+        code_block = []
+        
+        for line in lines:
+            if line.startswith('```'):
+                if in_code_block:
+                    # End of code block, format it
+                    if code_block and len(code_block) > 1:
+                        lexer = get_lexer_by_name(code_block[0].strip() or 'text')
+                        code = '\n'.join(code_block[1:])
+                        formatted_code = highlight(code, lexer, TerminalFormatter())
+                        click.echo(formatted_code)
+                    else:
+                        click.echo('\n'.join(code_block))
+                    code_block = []
+                in_code_block = not in_code_block
+            elif in_code_block:
+                code_block.append(line)
+            else:
+                # Basic markdown formatting
+                if line.startswith('#'):
+                    # Headers
+                    level = len(line) - len(line.lstrip('#'))
+                    line = line.lstrip('#').strip()
+                    click.echo('\n' + click.style(line, bold=True, underline=True) + '\n')
+                elif line.startswith('-'):
+                    # List items
+                    click.echo('• ' + line[1:].strip())
+                elif line.strip() == '':
+                    # Empty line
+                    click.echo()
+                else:
+                    # Regular text
+                    click.echo(line)
+
+
+@main.command()
+@click.argument('project_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.option('--format', '-f', 'output_format',
+              type=click.Choice(['text', 'json', 'yaml'], case_sensitive=False),
+              default='text', help='Output format (default: text)')
+@click.pass_context
+def stats(ctx, project_dir, output_format):
+    """Display statistics about a generated API project.
+    
+    PROJECT_DIR: Path to the generated API project directory
+    """
+    from pathlib import Path
+    import os
+    import json
+    from collections import defaultdict
+    
+    try:
+        project_path = Path(project_dir)
+        stats = {
+            'project': {
+                'name': project_path.name,
+                'path': str(project_path.absolute()),
+                'created': project_path.stat().st_ctime,
+                'modified': project_path.stat().st_mtime
+            },
+            'files': defaultdict(int),
+            'languages': defaultdict(int),
+            'endpoints': [],
+            'models': [],
+            'total_files': 0,
+            'total_lines': 0
+        }
+        
+        # Common file extensions to language mapping
+        EXT_TO_LANG = {
+            '.py': 'Python',
+            '.js': 'JavaScript',
+            '.ts': 'TypeScript',
+            '.json': 'JSON',
+            '.yaml': 'YAML',
+            '.yml': 'YAML',
+            '.md': 'Markdown',
+            '.html': 'HTML',
+            '.css': 'CSS',
+            '.sql': 'SQL'
+        }
+        
+        # Walk through the project directory
+        for root, dirs, files in os.walk(project_path):
+            # Skip virtual environment and other common directories
+            if any(d in root for d in ('venv', '.venv', '__pycache__', 'node_modules', '.git')):
+                continue
+                
+            for file in files:
+                file_path = Path(root) / file
+                ext = file_path.suffix.lower()
+                
+                # Skip binary files and other non-text files
+                if ext in ('.pyc', '.pyo', '.pyd', '.so', '.dll', '.exe'):
+                    continue
+                
+                # Update file type stats
+                stats['files'][ext] += 1
+                stats['total_files'] += 1
+                
+                # Update language stats
+                lang = EXT_TO_LANG.get(ext, 'Other')
+                stats['languages'][lang] += 1
+                
+                # Count lines in the file
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        lines = f.readlines()
+                        stats['total_lines'] += len(lines)
+                        
+                        # Simple detection of API endpoints and models
+                        if file_path.suffix == '.py':
+                            content = '\n'.join(lines).lower()
+                            if any(route in content for route in ['@app.get', '@app.post', '@app.put', '@app.delete']):
+                                stats['endpoints'].append(str(file_path.relative_to(project_path)))
+                            elif 'class' in content and ('sqlalchemy' in content or 'pydantic' in content):
+                                stats['models'].append(str(file_path.relative_to(project_path)))
+                except (UnicodeDecodeError, PermissionError):
+                    pass
+        
+        # Prepare the output
+        if output_format in ('json', 'yaml'):
+            # Convert defaultdict to regular dict for serialization
+            stats['files'] = dict(stats['files'])
+            stats['languages'] = dict(stats['languages'])
+            click.echo(_format_output(stats, output_format))
+        else:
+            click.echo(f"\n{click.style('Project Statistics', bold=True, underline=True)}\n")
+            click.echo(f"Project: {stats['project']['name']}")
+            click.echo(f"Location: {stats['project']['path']}")
+            click.echo(f"Total files: {stats['total_files']}")
+            click.echo(f"Total lines of code: {stats['total_lines']}")
+            
+            click.echo("\nFile Types:")
+            for ext, count in sorted(stats['files'].items(), key=lambda x: x[1], reverse=True):
+                click.echo(f"  {ext or 'No extension'}: {count}")
+            
+            click.echo("\nLanguages:")
+            for lang, count in sorted(stats['languages'].items(), key=lambda x: x[1], reverse=True):
+                click.echo(f"  {lang}: {count}")
+            
+            if stats['models']:
+                click.echo("\nDetected Models:")
+                for model in stats['models']:
+                    click.echo(f"  • {model}")
+            
+            if stats['endpoints']:
+                click.echo("\nDetected API Endpoints:")
+                for endpoint in stats['endpoints']:
+                    click.echo(f"  • {endpoint}")
+            
+            click.echo("\nUse --format json or --format yaml for machine-readable output.")
+    
+    except Exception as e:
+        error_msg = f"Error generating project statistics: {str(e)}"
+        if output_format in ('json', 'yaml'):
+            click.echo(_format_output({
+                'error': error_msg,
+                'details': str(e)
+            }, output_format), err=True)
+        else:
+            click.secho(error_msg, fg='red', err=True)
+        ctx.exit(1)
+
+
+@main.command()
+@click.option('--format', '-f', 'output_format',
+              type=click.Choice(['text', 'json', 'yaml'], case_sensitive=False),
+              default='text', help='Output format (default: text)')
+def info(output_format):
+    """Display system and configuration information."""
+    import platform
+    import sys
+    import os
+    import json
+    import pkg_resources
+    from pathlib import Path
+    
+    # Gather system information
+    system_info = {
+        'system': {
+            'platform': platform.system(),
+            'release': platform.release(),
+            'version': platform.version(),
+            'machine': platform.machine(),
+            'processor': platform.processor(),
+            'python_version': platform.python_version(),
+            'python_implementation': platform.python_implementation(),
+            'python_compiler': platform.python_compiler()
+        },
+        'environment': {
+            'cwd': os.getcwd(),
+            'home': str(Path.home()),
+            'user': os.getenv('USER', os.getenv('USERNAME', 'unknown')),
+            'path': os.getenv('PATH', '').split(os.pathsep)
+        },
+        'text2api': {
+            'version': pkg_resources.get_distribution('text2api').version,
+            'package_path': str(Path(__file__).parent.parent),
+            'templates_path': str(Path(__file__).parent / 'generators' / 'templates'),
+            'config_path': str(Path.home() / '.config' / 'text2api')
+        },
+        'dependencies': {}
+    }
+    
+    # Get installed packages and versions
+    installed_packages = {pkg.key: pkg.version 
+                         for pkg in pkg_resources.working_set}
+    
+    # Only include direct dependencies to keep the output clean
+    direct_deps = [
+        'click', 'jinja2', 'spacy', 'pydantic', 'fastapi', 'uvicorn',
+        'sqlalchemy', 'pytest', 'black', 'flake8', 'mypy'
+    ]
+    
+    for dep in direct_deps:
+        if dep in installed_packages:
+            system_info['dependencies'][dep] = installed_packages[dep]
+    
+    # Format the output
+    if output_format in ('json', 'yaml'):
+        click.echo(_format_output(system_info, output_format))
+    else:
+        click.echo("System Information:")
+        click.echo("-" * 50)
+        click.echo(f"Platform: {system_info['system']['platform']} {system_info['system']['release']}")
+        click.echo(f"Python: {system_info['system']['python_implementation']} {system_info['system']['python_version']}")
+        click.echo(f"Working Directory: {system_info['environment']['cwd']}")
+        click.echo(f"User: {system_info['environment']['user']}")
+        
+        click.echo("\ntext2api:")
+        click.echo(f"  Version: {system_info['text2api']['version']}")
+        click.echo(f"  Package Path: {system_info['text2api']['package_path']}")
+        click.echo(f"  Templates Path: {system_info['text2api']['templates_path']}")
+        click.echo(f"  Config Path: {system_info['text2api']['config_path']}")
+        
+        click.echo("\nDependencies:")
+        for pkg, ver in system_info['dependencies'].items():
+            click.echo(f"  {pkg}: {ver}")
+        
+        click.echo("\nUse --format json or --format yaml for machine-readable output.")
+
+
 @main.group()
 @click.pass_context
 def list_cmd(ctx):

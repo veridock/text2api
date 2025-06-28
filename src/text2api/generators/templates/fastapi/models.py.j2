@@ -126,6 +126,8 @@ class DB{{ model.name }}(Base):
     {%- set column_args = [db_type] -%}
     {%- if field.required -%}
     {%- set column_args = column_args + ['nullable=False'] -%}
+    {%- else -%}
+    {%- set column_args = column_args + ['nullable=True'] -%}
     {%- endif -%}
     {%- if field.unique -%}
     {%- set column_args = column_args + ['unique=True'] -%}
@@ -133,7 +135,10 @@ class DB{{ model.name }}(Base):
     {%- if field.index -%}
     {%- set column_args = column_args + ['index=True'] -%}
     {%- endif -%}
-    {{ field.name }} = Column({{ column_args|join(', ') }})
+    {{ field.name }} = Column(
+        {{ column_args|join(', ') }}
+    )
+    
     {%- endif %}
     {%- endfor %}
     

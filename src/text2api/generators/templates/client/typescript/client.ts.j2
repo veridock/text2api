@@ -125,7 +125,7 @@ export class {{ project_name|title }}Client {
   }): Promise<{{ model.name }}PaginatedResponse> {
     return this.request<{{ model.name }}PaginatedResponse>({
       method: 'GET',
-      url: '/api/v1/{{ model.name.lower() }}',
+      url: '/api/v1/{{ model.name|lower }}',
       params,
     });
   }
@@ -137,7 +137,7 @@ export class {{ project_name|title }}Client {
   async get{{ model.name }}(id: string): Promise<{{ model.name }}> {
     return this.request<{{ model.name }}>({
       method: 'GET',
-      url: `/api/v1/{{ model.name.lower() }}/${id}`,
+      url: `/api/v1/{{ model.name|lower }}/${id}`,
     });
   }
 
@@ -148,7 +148,7 @@ export class {{ project_name|title }}Client {
   async create{{ model.name }}(data: Create{{ model.name }}Dto): Promise<{{ model.name }}> {
     return this.request<{{ model.name }}>({
       method: 'POST',
-      url: '/api/v1/{{ model.name.lower() }}',
+      url: '/api/v1/{{ model.name|lower }}',
       data,
     });
   }
@@ -161,7 +161,7 @@ export class {{ project_name|title }}Client {
   async update{{ model.name }}(id: string, data: Update{{ model.name }}Dto): Promise<{{ model.name }}> {
     return this.request<{{ model.name }}>({
       method: 'PUT',
-      url: `/api/v1/{{ model.name.toLowerCase() }}/${id}`,
+      url: `/api/v1/{{ model.name|lower }}/${id}`,
       data,
     });
   }
@@ -173,7 +173,7 @@ export class {{ project_name|title }}Client {
   async delete{{ model.name }}(id: string): Promise<void> {
     await this.request({
       method: 'DELETE',
-      url: `/api/v1/{{ model.name.toLowerCase() }}/${id}`,
+      url: `/api/v1/{{ model.name|lower }}/${id}`,
     });
   }
   {% endfor %}
